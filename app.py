@@ -9,6 +9,73 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
+# Domain model and data dictionary context (as strings for LLM prompt)
+DOMAIN_MODEL = """
+Eligibility Domain Model:
+- memberFirst: First name of the member
+- memberLast: Last name of the member
+- mbrDOB: Date of birth
+- mbrGender: Gender
+- ssn: Social Security Number
+- memberID: Unique member identifier
+- enrollmentStatus: Enrollment status
+- enrollmentEffectiveDate: Enrollment effective date
+- terminationDate: Termination date
+- planID: Plan identifier
+- product: Product type
+- lob: Line of business
+- memberMonth: Number of member months
+- dualEligibilityInd: Dual eligibility indicator
+- coverageDesc: Coverage description
+- Employer Group: Employer group (array groupName (Name of the employer group), groupStatus (Status of the group), addressLine1 (First line of address), addressLine2 (Second line of address), zip (ZIP code))
+"""
+
+DATA_DICTIONARY = """
+Source Data Dictionary:
+MemberID : Unique identifier for the member
+SSN : Social Security Number (masked/fake for demo)
+FirstName : Member first name
+LastName : Member last name
+Gender : Member gender
+DOB : Member date of birth
+Address : Member street address
+City : Member city
+State : Member state
+Zip : Member ZIP code
+Phone : Member phone number
+Email : Member email address
+EnrollmentStart : Coverage enrollment start date
+EnrollmentEnd : Coverage enrollment end date
+Relationship : Relationship to subscriber
+MemberSeq : Sequence in the family unit
+CoverageType : Type of benefit coverage
+CoverageStatus : Status of the coverage
+GroupID : Unique identifier for employer/group
+GroupName : Name of the employer/group
+GroupAddress : Employer/group address
+GroupCity : Employer/group city
+GroupState : Employer/group state
+GroupZip : Employer/group ZIP code
+GroupStatus : Status of the employer/group
+PlanID : Insurance plan identifier
+PlanName : Insurance plan name
+PlanType : Plan type abbreviation
+PlanEffectiveDate : Date plan became effective
+PlanTerminationDate : Date plan is/was terminated
+PCPName : Primary Care Physician name
+PCPNPI : National Provider Identifier for PCP
+SubscriberID : MemberID of the subscriber in the family unit
+MaritalStatus : Member marital status
+EmploymentStatus : Member employment status
+Language : Preferred language
+Ethnicity : Member ethnicity
+MedicareID : Medicare Identifier (if any)
+MedicaidID : Medicaid Identifier (if any)
+OtherInsurance : Indicates presence of other insurance
+DisabilityStatus : Indicates disability status
+"""
+
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
@@ -176,15 +243,17 @@ def generate_llm_mappings_endpoint():
     if not current_source_headers:
         return jsonify({'error': 'No source file uploaded'}), 400
     try:
-        # Get Databricks configuration from request if provided
-        # Always use the default Databricks config, do not allow override from UI
+        # Compose extra context for LLM prompt (domain model, data dictionary, transformation rules, SQL script request)
+        extra_context = f"""
+{DOMAIN_MODEL}\n\n{DATA_DICTIONARY}\n\nTransformation Rules:\n{TRANSFORMATION_RULES}\n\nFor each transformation rule, also generate a sample SQL script that demonstrates how to implement that transformation in Databricks SQL (ANSI SQL compatible with Databricks).\n\nPlease provide the SQL mapping expressions for each stage field using the transformation rules, based on the source data sample. Respond in JSON with 'mappings', 'reasoning', and 'sql_scripts' (where 'sql_scripts' is a dictionary with the transformation rule as the key and the SQL script as the value, and all SQL must be valid in Databricks SQL).\n"""
         result = llm_generate_mappings(
             current_source_headers,
             current_source_data[:10],  # Top 10 rows
             STAGE_FIELDS,
             DATABRICKS_BASE_URL,
             DATABRICKS_MODEL,
-            DATABRICKS_TOKEN
+            DATABRICKS_TOKEN,
+            extra_context=extra_context
         )
         if result['success']:
             # Handle nested 'mappings' key if present (as in new LLM output)
