@@ -11,7 +11,7 @@ DATABRICKS_TOKEN = os.environ.get('DATABRICKS_TOKEN')
 STAGE_FIELDS = [
     'memberFirst', 'memberLast', 'mbrDOB', 'mbrGender', 'ssn', 'memberID',
     'enrollmentStatus', 'enrollmentEffectiveDate', 'terminationDate', 'planID',
-    'product', 'lob', 'memberMonth', 'dualEligibilityInd', 'employerGroup',
+    'product', 'lob', 'memberMonth', 'dualEligibilityInd',
     'coverageDesc', 'Employer Group'
 ]
 
