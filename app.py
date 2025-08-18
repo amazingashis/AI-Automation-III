@@ -1,3 +1,52 @@
+# --- Data Dictionary & Domain Model Parsing Utilities ---
+import pandas as pd
+
+def parse_data_dict(path):
+    df = pd.read_excel(path)
+    df.columns = [c.strip() for c in df.columns]
+    column_mapping = {
+        'Column Name': 'column_name',
+        'Data Type': 'data_type',
+        'Description': 'description',
+        'Format': 'format',
+        'Required': 'required',
+        'Notes': 'notes'
+    }
+    df = df.rename(columns=column_mapping)
+    if 'column_name' in df.columns:
+        df = df.dropna(subset=['column_name'])
+        instruction_patterns = ['instruction', 'this table', 'all fields', 'for actual', 'note:', 'example']
+        for pattern in instruction_patterns:
+            df = df[~df['column_name'].astype(str).str.contains(pattern, case=False, na=False)]
+    return df
+
+def parse_domain_model(path):
+    df = pd.read_excel(path)
+    df.columns = [c.strip() for c in df.columns]
+    column_mapping = {
+        'Column Name': 'column_name',
+        'Data Type': 'data_type',
+        'Description': 'description',
+        'Allowed Values / Format': 'allowed_values',
+        'Required': 'required',
+        'Notes': 'notes'
+    }
+    df = df.rename(columns=column_mapping)
+    if 'column_name' in df.columns:
+        df = df.dropna(subset=['column_name'])
+    return df
+
+# --- LLM Context Builder ---
+def build_llm_context(data_dict_df, domain_model_df):
+    context = []
+    context.append('SOURCE DATA COLUMNS (sample):')
+    for _, row in data_dict_df.head(20).iterrows():
+        context.append(f"- {row['column_name']} ({row.get('data_type','')}): {row.get('description','')}")
+    context.append('\nTARGET DOMAIN MODEL:')
+    for _, row in domain_model_df.iterrows():
+        context.append(f"- {row['column_name']} ({row.get('data_type','')}): {row.get('description','')}")
+    context.append('\nTASK: Map each source field to the most appropriate stage field.')
+    return '\n'.join(context)
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 import csv
 import os
@@ -44,8 +93,21 @@ def upload_data_dict():
         return jsonify({'error': 'No file selected'}), 400
     # Ensure parent directory exists
     os.makedirs(os.path.dirname(DATA_DICT_UPLOAD_PATH), exist_ok=True)
-    file.save(DATA_DICT_UPLOAD_PATH)
-    return jsonify({'success': True, 'message': 'Data dictionary uploaded successfully.'})
+    filename = file.filename.lower()
+    try:
+        if filename.endswith('.xlsx') or filename.endswith('.xls'):
+            df = parse_data_dict(file)
+            # Save normalized CSV for LLM context
+            df.to_csv(DATA_DICT_UPLOAD_PATH, index=False)
+        elif filename.endswith('.csv'):
+            df = pd.read_csv(file)
+            df.to_csv(DATA_DICT_UPLOAD_PATH, index=False)
+        else:
+            # Save as plain text
+            file.save(DATA_DICT_UPLOAD_PATH)
+        return jsonify({'success': True, 'message': 'Data dictionary uploaded successfully.'})
+    except Exception as e:
+        return jsonify({'error': f'Failed to process file: {str(e)}'}), 400
 
 @app.route('/upload_domain_model', methods=['POST'])
 def upload_domain_model():
@@ -56,8 +118,19 @@ def upload_domain_model():
         return jsonify({'error': 'No file selected'}), 400
     # Ensure parent directory exists
     os.makedirs(os.path.dirname(DOMAIN_MODEL_UPLOAD_PATH), exist_ok=True)
-    file.save(DOMAIN_MODEL_UPLOAD_PATH)
-    return jsonify({'success': True, 'message': 'Domain model uploaded successfully.'})
+    filename = file.filename.lower()
+    try:
+        if filename.endswith('.xlsx') or filename.endswith('.xls'):
+            df = parse_domain_model(file)
+            df.to_csv(DOMAIN_MODEL_UPLOAD_PATH, index=False)
+        elif filename.endswith('.csv'):
+            df = pd.read_csv(file)
+            df.to_csv(DOMAIN_MODEL_UPLOAD_PATH, index=False)
+        else:
+            file.save(DOMAIN_MODEL_UPLOAD_PATH)
+        return jsonify({'success': True, 'message': 'Domain model uploaded successfully.'})
+    except Exception as e:
+        return jsonify({'error': f'Failed to process file: {str(e)}'}), 400
 
 
 # Paths for uploaded context files (must be after app is defined)
@@ -229,11 +302,23 @@ def generate_llm_mappings_endpoint():
     import sys
     try:
         print("[INFO] Starting LLM mapping generation...", file=sys.stderr)
-        # Use uploaded files for context if present
-        domain_model = get_context_file(DOMAIN_MODEL_UPLOAD_PATH, DEFAULT_DOMAIN_MODEL)
-        data_dict = get_context_file(DATA_DICT_UPLOAD_PATH, DEFAULT_DATA_DICTIONARY)
-        extra_context = f"""
-{domain_model}\n\n{data_dict}\n\nTransformation Rules:\n{TRANSFORMATION_RULES}\n\nINSTRUCTIONS:\nReturn ONLY a single flat JSON dictionary where each key is a stage field from the list below, and each value is the mapping expression for that field.\nDo NOT include any nested keys, reasoning, SQL scripts, or extra information.\nDo NOT include a 'mappings' key, just the dictionary itself.\nIf a mapping is not possible, use an empty string as the value.\nStage fields: {', '.join(STAGE_FIELDS)}\n"""
+        # Use parsed/normalized context for LLM
+        try:
+            data_dict_df = pd.read_csv(DATA_DICT_UPLOAD_PATH)
+            domain_model_df = pd.read_csv(DOMAIN_MODEL_UPLOAD_PATH)
+            llm_context = build_llm_context(data_dict_df, domain_model_df)
+        except Exception as e:
+            llm_context = f"[ERROR] Could not parse context files: {e}"
+    extra_context = f"""
+{llm_context}
+
+INSTRUCTIONS:
+You are expert in US health care domain. Return ONLY a single flat JSON dictionary where each key is a stage field from the list below, and each value is the name of the most appropriate source field (from the source data) to map to that stage field.
+Do NOT include any transformation logic, mapping expressions, nested keys, reasoning, SQL scripts, or extra information.
+Do NOT include a 'mappings' key, just the dictionary itself.
+If a mapping is not possible, use an empty string as the value.
+Stage fields: {', '.join(STAGE_FIELDS)}
+"""
         result = llm_generate_mappings(
             current_source_headers,
             current_source_data[:10],  # Top 10 rows
