@@ -24,6 +24,17 @@ def get_context_file(path, default):
 # Default context (used if no file uploaded)
 DEFAULT_DOMAIN_MODEL = "Eligibility Domain Model: ..."
 DEFAULT_DATA_DICTIONARY = "Source Data Dictionary: ..."
+
+# ...existing code...
+
+app = Flask(__name__)
+app.config['UPLOAD_FOLDER'] = 'uploads'
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+
+# Paths for uploaded context files (must be after app is defined)
+DATA_DICT_UPLOAD_PATH = os.path.join(app.config['UPLOAD_FOLDER'], 'context', 'data_dict.txt')
+DOMAIN_MODEL_UPLOAD_PATH = os.path.join(app.config['UPLOAD_FOLDER'], 'domain', 'domain_model.txt')
+
 @app.route('/upload_data_dict', methods=['POST'])
 def upload_data_dict():
     if 'data_dict_file' not in request.files:
