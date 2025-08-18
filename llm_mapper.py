@@ -6,16 +6,17 @@ using AI analysis of source data and target stage fields.
 """
 
 import json
+import openai
 import requests
 from typing import List, Dict, Any, Optional
 
 
 class LLMMapperConfig:
     """Configuration class for LLM mapping generation."""
-    
-    def __init__(self, base_url: str = "http://localhost:1234/v1", model: str = "google/gemma-3n-e4b"):
+    def __init__(self, base_url: str = "https://dbc-3735add4-1cb6.cloud.databricks.com/serving-endpoints", model: str = "databricks-claude-sonnet-4", token: str = None):
         self.base_url = base_url
         self.model = model
+        self.token = token
         self.timeout = 600  # 5 minutes timeout for LLM processing
         self.temperature = 0.1
         self.max_tokens = 2000
@@ -62,8 +63,8 @@ class LLMMapper:
             # Create the prompt for the LLM
             prompt = self._create_mapping_prompt(source_headers, source_data_sample, stage_fields)
             
-            # Call LMStudio API
-            api_response = self._call_lmstudio_api(prompt)
+            # Call Databricks API
+            api_response = self._call_databricks_api(prompt)
             
             # Parse the response to extract mappings
             mappings = self._parse_llm_response(api_response)
@@ -199,46 +200,25 @@ Important: Only include mappings where you can confidently match source fields t
         
         return functions_text
     
-    def _call_lmstudio_api(self, prompt: str) -> Dict[str, Any]:
-        """Make API call to LMStudio server."""
-        
-        headers = {
-            'Content-Type': 'application/json'
-        }
-        
-        data = {
-            "model": self.config.model,
-            "messages": [
-                {
-                    "role": "system", 
-                    "content": "You are a data mapping expert specializing in healthcare data. Always respond with valid JSON containing mappings and reasoning."
-                },
-                {
-                    "role": "user", 
-                    "content": prompt
-                }
-            ],
-            "temperature": self.config.temperature,
-            "max_tokens": self.config.max_tokens,
-            "stream": False
-        }
-        
-        # Debug information
-        api_url = f"{self.config.base_url}/chat/completions"
-        print(f"Making API call to: {api_url}")
-        print(f"Using model: {self.config.model}")
-        print(f"Timeout: {self.config.timeout} seconds")
-        
-        response = requests.post(
-            api_url,
-            headers=headers,
-            json=data,
-            timeout=self.config.timeout
+    def _call_databricks_api(self, prompt: str) -> Dict[str, Any]:
+        """Make API call to Databricks endpoint using OpenAI client."""
+        if not self.config.token:
+            raise ValueError("Databricks API token is required.")
+        client = openai.OpenAI(
+            api_key=self.config.token,
+            base_url=self.config.base_url
         )
-        
-        print(f"Response status code: {response.status_code}")
-        response.raise_for_status()
-        return response.json()
+        response = client.chat.completions.create(
+            model=self.config.model,
+            messages=[
+                {"role": "system", "content": "You are a data mapping expert specializing in healthcare data. Always respond with valid JSON containing mappings and reasoning."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=self.config.temperature,
+            max_tokens=self.config.max_tokens
+        )
+        # Convert OpenAI response to dict for compatibility
+        return {"choices": [{"message": {"content": response.choices[0].message.content}}]}
     
     def _parse_llm_response(self, api_response: Dict[str, Any]) -> Dict[str, str]:
         """Parse LMStudio API response to extract mappings."""
@@ -307,21 +287,20 @@ Important: Only include mappings where you can confidently match source fields t
 
 # Convenience function for simple usage
 def generate_mappings(source_headers: List[str], source_data_sample: List[List[str]], 
-                     stage_fields: List[str], lmstudio_url: str = "http://localhost:1234/v1", 
-                     model: str = "google/gemma-3n-e4b") -> Dict[str, Any]:
+                     stage_fields: List[str], databricks_url: str = "https://dbc-3735add4-1cb6.cloud.databricks.com/serving-endpoints", 
+                     model: str = "databricks-claude-sonnet-4", token: str = None) -> Dict[str, Any]:
     """
-    Convenience function to generate mappings with custom configuration.
-    
+    Convenience function to generate mappings with custom configuration for Databricks.
     Args:
         source_headers: List of source file column headers
         source_data_sample: Sample rows from source data
         stage_fields: List of target stage field names
-        lmstudio_url: LMStudio API URL
+        databricks_url: Databricks API URL
         model: Model name to use
-        
+        token: Databricks API token
     Returns:
         Dictionary containing success status, mappings, and reasoning
     """
-    config = LLMMapperConfig(base_url=lmstudio_url, model=model)
+    config = LLMMapperConfig(base_url=databricks_url, model=model, token=token)
     mapper = LLMMapper(config)
     return mapper.generate_mappings(source_headers, source_data_sample, stage_fields)

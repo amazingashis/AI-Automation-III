@@ -58,8 +58,14 @@ current_mappings = {}
 current_source_data = []
 
 # LMStudio configuration
-LMSTUDIO_BASE_URL = "http://localhost:1234/v1"
-LLM_MODEL = "google/gemma-3n-e4b"
+import openai
+
+# Databricks API configuration
+DATABRICKS_BASE_URL = "https://dbc-3735add4-1cb6.cloud.databricks.com/serving-endpoints"
+DATABRICKS_MODEL = "databricks-claude-sonnet-4"
+
+# Get Databricks token from environment variable
+DATABRICKS_TOKEN = os.environ.get('DATABRICKS_TOKEN')
 
 @app.route('/')
 def index():
@@ -160,18 +166,20 @@ def generate_llm_mappings_endpoint():
         return jsonify({'error': 'No source file uploaded'}), 400
     
     try:
-        # Get LMStudio configuration from request if provided
+        # Get Databricks configuration from request if provided
         data = request.get_json() or {}
-        lmstudio_url = data.get('lmstudio_url', LMSTUDIO_BASE_URL)
-        model = data.get('model', LLM_MODEL)
-        
-        # Generate mappings using the new LLM mapper module
+        databricks_url = data.get('databricks_url', DATABRICKS_BASE_URL)
+        model = data.get('model', DATABRICKS_MODEL)
+        token = DATABRICKS_TOKEN
+
+        # Generate mappings using the new LLM mapper module (now Databricks)
         result = llm_generate_mappings(
-            current_source_headers, 
+            current_source_headers,
             current_source_data[:10],  # Top 10 rows
             STAGE_FIELDS,
-            lmstudio_url,
-            model
+            databricks_url,
+            model,
+            token
         )
         
         if result['success']:
