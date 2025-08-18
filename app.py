@@ -164,18 +164,14 @@ def generate_llm_mappings_endpoint():
         return jsonify({'error': 'No source file uploaded'}), 400
     try:
         # Get Databricks configuration from request if provided
-        data = request.get_json() or {}
-        databricks_url = data.get('databricks_url', DATABRICKS_BASE_URL)
-        model = data.get('model', DATABRICKS_MODEL)
-        token = DATABRICKS_TOKEN
-        # Generate mappings using the LLM mapper module (Databricks)
+        # Always use the default Databricks config, do not allow override from UI
         result = llm_generate_mappings(
             current_source_headers,
             current_source_data[:10],  # Top 10 rows
             STAGE_FIELDS,
-            databricks_url,
-            model,
-            token
+            DATABRICKS_BASE_URL,
+            DATABRICKS_MODEL,
+            DATABRICKS_TOKEN
         )
         if result['success']:
             # Update current mappings with LLM suggestions

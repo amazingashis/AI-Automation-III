@@ -12,10 +12,10 @@ from typing import List, Dict, Any, Optional
 
 
 class LLMMapperConfig:
-    """Configuration class for LLM mapping generation."""
-    def __init__(self, base_url: str = "https://dbc-3735add4-1cb6.cloud.databricks.com/serving-endpoints", model: str = "databricks-claude-sonnet-4", token: str = None):
-        self.base_url = base_url
-        self.model = model
+    """Configuration class for LLM mapping generation (Databricks only)."""
+    def __init__(self, token: str = None):
+        self.base_url = "https://dbc-3735add4-1cb6.cloud.databricks.com/serving-endpoints"
+        self.model = "databricks-claude-sonnet-4"
         self.token = token
         self.timeout = 600  # 5 minutes timeout for LLM processing
         self.temperature = 0.1
@@ -275,20 +275,17 @@ Important: Only include mappings where you can confidently match source fields t
 
 # Convenience function for simple usage
 def generate_mappings(source_headers: List[str], source_data_sample: List[List[str]], 
-                     stage_fields: List[str], databricks_url: str = "https://dbc-3735add4-1cb6.cloud.databricks.com/serving-endpoints", 
-                     model: str = "databricks-claude-sonnet-4", token: str = None) -> Dict[str, Any]:
+                     stage_fields: List[str], _databricks_url: str = None, _model: str = None, token: str = None) -> Dict[str, Any]:
     """
-    Convenience function to generate mappings with custom configuration for Databricks.
+    Generate mappings using Databricks LLM. All config is hardcoded for Databricks.
     Args:
         source_headers: List of source file column headers
         source_data_sample: Sample rows from source data
         stage_fields: List of target stage field names
-        databricks_url: Databricks API URL
-        model: Model name to use
         token: Databricks API token
     Returns:
         Dictionary containing success status, mappings, and reasoning
     """
-    config = LLMMapperConfig(base_url=databricks_url, model=model, token=token)
+    config = LLMMapperConfig(token=token)
     mapper = LLMMapper(config)
     return mapper.generate_mappings(source_headers, source_data_sample, stage_fields)
