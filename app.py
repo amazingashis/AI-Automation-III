@@ -157,11 +157,8 @@ STAGE_FIELDS = [
     'memberMonth',
     'dualEligibilityInd',
     'coverageDesc',
-    'Employer Group: groupName',
-    'Employer Group: groupStatus',
-    'Employer Group: addressLine1',
-    'Employer Group: addressLine2',
-    'Employer Group: zip'
+    # Employer Group is now an object with subfields
+    'employerGroups'  # Object with keys: groupName, groupStatus, addressLine1, addressLine2, zip
 ]
 
 # Predefined transformation rules/functions
@@ -263,9 +260,25 @@ def save_mapping():
     stage_field = data.get('stage_field')
     mapping_expression = data.get('mapping_expression')
     
-    if not stage_field or not mapping_expression:
+    if not stage_field or mapping_expression is None:
         return jsonify({'error': 'Stage field and mapping expression are required'}), 400
-    
+
+
+    # Special handling for employerGroups object
+    if stage_field == 'employerGroups':
+        try:
+            # mapping_expression is a JSON stringified object
+            group_obj = json.loads(mapping_expression) if isinstance(mapping_expression, str) else mapping_expression
+            if not isinstance(group_obj, dict):
+                raise ValueError('Employer Groups must be an object')
+            # Only keep allowed keys
+            allowed_keys = ['groupName', 'groupStatus', 'addressLine1', 'addressLine2', 'zip']
+            filtered = {k: group_obj.get(k, '') for k in allowed_keys}
+            current_mappings[stage_field] = filtered
+            return jsonify({'success': True, 'message': 'Employer Group mapping saved'})
+        except Exception as e:
+            return jsonify({'error': f'Invalid Employer Group object: {e}'})
+
     # Validate the mapping expression (basic validation)
     if validate_mapping_expression(mapping_expression):
         current_mappings[stage_field] = mapping_expression
@@ -316,8 +329,18 @@ def generate_llm_mappings_endpoint():
 {llm_context}
 
 INSTRUCTIONS:
-You are expert in US health care domain. Return ONLY a single flat JSON dictionary where each key is a stage field from the list below, and each value is the name of the most appropriate source field (from the source data) to map to that stage field.
-Do NOT include any transformation logic, mapping expressions, nested keys, reasoning, SQL scripts, or extra information.
+You are an expert in US health care domain. Return ONLY a single JSON dictionary where each key is a stage field from the list below, and each value is the name of the most appropriate source field (from the source data) to map to that stage field.
+For the field 'employerGroups', return an object with the following keys: groupName, groupStatus, addressLine1, addressLine2, zip. Each value should be the name of the most appropriate source field for that subfield. Example:
+
+"employerGroups": {{
+    "groupName": "...",
+    "groupStatus": "...",
+    "addressLine1": "...",
+    "addressLine2": "...",
+    "zip": "..."
+}}
+
+Do NOT include any transformation logic, mapping expressions, nested keys (except for employerGroups), reasoning, SQL scripts, or extra information.
 Do NOT include a 'mappings' key, just the dictionary itself.
 If a mapping is not possible, use an empty string as the value.
 Stage fields: {', '.join(STAGE_FIELDS)}
@@ -332,7 +355,7 @@ Stage fields: {', '.join(STAGE_FIELDS)}
         print("[INFO] LLM response received:", file=sys.stderr)
         print(result, file=sys.stderr)
         if result['success']:
-            # Expect a flat dictionary of mappings only
+            # Expect a dictionary of mappings, with employerGroups as an object
             mappings = result.get('mappings')
             llm_mappings = mappings if isinstance(mappings, dict) else {}
             # Normalize mapping keys to match STAGE_FIELDS (case-insensitive, strip)
@@ -340,7 +363,11 @@ Stage fields: {', '.join(STAGE_FIELDS)}
             filtered = {}
             for k, v in llm_mappings.items():
                 k_norm = k.lower().strip()
-                if k_norm in stage_fields_norm and isinstance(v, str):
+                if k_norm == 'employergroups' and isinstance(v, dict):
+                    # Only keep allowed subfields
+                    allowed_keys = ['groupName', 'groupStatus', 'addressLine1', 'addressLine2', 'zip']
+                    filtered['employerGroups'] = {subk: v.get(subk, '') for subk in allowed_keys}
+                elif k_norm in stage_fields_norm and isinstance(v, str):
                     filtered[stage_fields_norm[k_norm]] = v.strip().strip('"')
             import sys
             print(f"[DEBUG] Filtered mappings to update: {filtered}", file=sys.stderr)

@@ -171,6 +171,77 @@
                             </thead>
                             <tbody id="mappingTableBody">
                                 {% for field in stage_fields %}
+                                {% if field == 'employerGroups' %}
+                                <tr>
+                                    <td colspan="2">
+                                        <div class="stage-field mb-2">
+                                            <strong>Employer Group</strong> <span class="text-muted">(Single set of fields)</span>
+                                        </div>
+                                        <div class="card mb-3 p-3" id="employerGroupCard">
+                                            <div class="mb-3">
+                                                <label class="form-label mb-1">groupName</label>
+                                                <div class="input-group">
+                                                    <input type="text" class="form-control mapping-input" placeholder="Mapping for groupName" data-eg-field="groupName">
+                                                    <div class="input-group-append">
+                                                        <button class="btn btn-outline-secondary btn-sm" type="button" onclick="clearEmployerGroupField('groupName')"><i class="fas fa-eraser"></i></button>
+                                                        <button class="btn btn-outline-info btn-sm" type="button" onclick="previewEmployerGroupField('groupName')"><i class="fas fa-eye"></i></button>
+                                                        <button class="btn btn-success btn-sm" type="button" onclick="saveIndividualMapping('employerGroups')"><i class="fas fa-save"></i></button>
+                                                    </div>
+                                                </div>
+                                                <div id="preview_employerGroup_groupName" class="mt-1"></div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label mb-1">groupStatus</label>
+                                                <div class="input-group">
+                                                    <input type="text" class="form-control mapping-input" placeholder="Mapping for groupStatus (Active/Termed)" data-eg-field="groupStatus">
+                                                    <div class="input-group-append">
+                                                        <button class="btn btn-outline-secondary btn-sm" type="button" onclick="clearEmployerGroupField('groupStatus')"><i class="fas fa-eraser"></i></button>
+                                                        <button class="btn btn-outline-info btn-sm" type="button" onclick="previewEmployerGroupField('groupStatus')"><i class="fas fa-eye"></i></button>
+                                                        <button class="btn btn-success btn-sm" type="button" onclick="saveIndividualMapping('employerGroups')"><i class="fas fa-save"></i></button>
+                                                    </div>
+                                                </div>
+                                                <div id="preview_employerGroup_groupStatus" class="mt-1"></div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label mb-1">addressLine1</label>
+                                                <div class="input-group">
+                                                    <input type="text" class="form-control mapping-input" placeholder="Mapping for addressLine1" data-eg-field="addressLine1">
+                                                    <div class="input-group-append">
+                                                        <button class="btn btn-outline-secondary btn-sm" type="button" onclick="clearEmployerGroupField('addressLine1')"><i class="fas fa-eraser"></i></button>
+                                                        <button class="btn btn-outline-info btn-sm" type="button" onclick="previewEmployerGroupField('addressLine1')"><i class="fas fa-eye"></i></button>
+                                                        <button class="btn btn-success btn-sm" type="button" onclick="saveIndividualMapping('employerGroups')"><i class="fas fa-save"></i></button>
+                                                    </div>
+                                                </div>
+                                                <div id="preview_employerGroup_addressLine1" class="mt-1"></div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label mb-1">addressLine2</label>
+                                                <div class="input-group">
+                                                    <input type="text" class="form-control mapping-input" placeholder="Mapping for addressLine2" data-eg-field="addressLine2">
+                                                    <div class="input-group-append">
+                                                        <button class="btn btn-outline-secondary btn-sm" type="button" onclick="clearEmployerGroupField('addressLine2')"><i class="fas fa-eraser"></i></button>
+                                                        <button class="btn btn-outline-info btn-sm" type="button" onclick="previewEmployerGroupField('addressLine2')"><i class="fas fa-eye"></i></button>
+                                                        <button class="btn btn-success btn-sm" type="button" onclick="saveIndividualMapping('employerGroups')"><i class="fas fa-save"></i></button>
+                                                    </div>
+                                                </div>
+                                                <div id="preview_employerGroup_addressLine2" class="mt-1"></div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label mb-1">zip</label>
+                                                <div class="input-group">
+                                                    <input type="text" class="form-control mapping-input" placeholder="Mapping for zip" data-eg-field="zip">
+                                                    <div class="input-group-append">
+                                                        <button class="btn btn-outline-secondary btn-sm" type="button" onclick="clearEmployerGroupField('zip')"><i class="fas fa-eraser"></i></button>
+                                                        <button class="btn btn-outline-info btn-sm" type="button" onclick="previewEmployerGroupField('zip')"><i class="fas fa-eye"></i></button>
+                                                        <button class="btn btn-success btn-sm" type="button" onclick="saveIndividualMapping('employerGroups')"><i class="fas fa-save"></i></button>
+                                                    </div>
+                                                </div>
+                                                <div id="preview_employerGroup_zip" class="mt-1"></div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
                                 <tr>
                                     <td>
                                         <div class="stage-field">
@@ -203,7 +274,45 @@
                                         <div id="preview_{{ field }}" class="mt-1"></div>
                                     </td>
                                 </tr>
+                                {% endif %}
                                 {% endfor %}
+    <script>
+    // Employer Group single mapping logic
+    function loadEmployerGroups(group) {
+        // group is an object with keys: groupName, groupStatus, addressLine1, addressLine2, zip
+        if (!group || typeof group !== 'object') group = {};
+        document.querySelector('#employerGroupCard [data-eg-field="groupName"]').value = group.groupName || '';
+        document.querySelector('#employerGroupCard [data-eg-field="groupStatus"]').value = group.groupStatus || '';
+        document.querySelector('#employerGroupCard [data-eg-field="addressLine1"]').value = group.addressLine1 || '';
+        document.querySelector('#employerGroupCard [data-eg-field="addressLine2"]').value = group.addressLine2 || '';
+        document.querySelector('#employerGroupCard [data-eg-field="zip"]').value = group.zip || '';
+    }
+
+    function clearEmployerGroupField(field) {
+        document.querySelector(`#employerGroupCard [data-eg-field="${field}"]`).value = '';
+        document.getElementById(`preview_employerGroup_${field}`).innerHTML = '';
+    }
+
+    function previewEmployerGroupField(field) {
+        const input = document.querySelector(`#employerGroupCard [data-eg-field="${field}"]`).value;
+        const sampleData = prompt('Enter sample data for preview:', 'Sample Value');
+        if (!input || !sampleData) return;
+        fetch('/preview_transformation', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ expression: input, sample_data: sampleData })
+        })
+        .then(response => response.json())
+        .then(data => {
+            const previewDiv = document.getElementById(`preview_employerGroup_${field}`);
+            if (data.success) {
+                previewDiv.innerHTML = `<div class="preview-result">Preview: <strong>${data.result}</strong></div>`;
+            } else {
+                previewDiv.innerHTML = `<small class="text-danger">Error: ${data.error}</small>`;
+            }
+        });
+    }
+    </script>
                             </tbody>
                         </table>
                     </div>
@@ -504,37 +613,66 @@
 
         // Save individual mapping
         function saveIndividualMapping(fieldName) {
-            const mappingExpression = document.getElementById(`mapping_${fieldName}`).value;
-            
-            if (!mappingExpression.trim()) {
-                alert('Please enter a mapping expression');
-                return;
-            }
-
-            fetch('/save_mapping', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    stage_field: fieldName,
-                    mapping_expression: mappingExpression
+            if (fieldName === 'employerGroups') {
+                // Save the single employer group mapping as an object
+                const card = document.getElementById('employerGroupCard');
+                const group = {
+                    groupName: card.querySelector('[data-eg-field="groupName"]').value,
+                    groupStatus: card.querySelector('[data-eg-field="groupStatus"]').value,
+                    addressLine1: card.querySelector('[data-eg-field="addressLine1"]').value,
+                    addressLine2: card.querySelector('[data-eg-field="addressLine2"]').value,
+                    zip: card.querySelector('[data-eg-field="zip"]').value
+                };
+                fetch('/save_mapping', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        stage_field: fieldName,
+                        mapping_expression: JSON.stringify(group)
+                    })
                 })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    currentMappings[fieldName] = mappingExpression;
-                    // Show success indicator
-                    const previewDiv = document.getElementById(`preview_${fieldName}`);
-                    previewDiv.innerHTML = '<small class="text-success">✓ Saved</small>';
-                    setTimeout(() => {
-                        previewDiv.innerHTML = '';
-                    }, 2000);
-                } else {
-                    alert('Error: ' + data.error);
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        currentMappings[fieldName] = group;
+                        alert('Employer Group mapping saved!');
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                });
+            } else {
+                const mappingExpression = document.getElementById(`mapping_${fieldName}`).value;
+                if (!mappingExpression.trim()) {
+                    alert('Please enter a mapping expression');
+                    return;
                 }
-            });
+                fetch('/save_mapping', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        stage_field: fieldName,
+                        mapping_expression: mappingExpression
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        currentMappings[fieldName] = mappingExpression;
+                        // Show success indicator
+                        const previewDiv = document.getElementById(`preview_${fieldName}`);
+                        previewDiv.innerHTML = '<small class="text-success">✓ Saved</small>';
+                        setTimeout(() => {
+                            previewDiv.innerHTML = '';
+                        }, 2000);
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                });
+            }
         }
 
         // Preview mapping for a specific field
@@ -685,9 +823,17 @@
         // Load mappings into the table
         function loadMappingsIntoTable() {
             for (const [field, mapping] of Object.entries(currentMappings)) {
-                const input = document.getElementById(`mapping_${field}`);
-                if (input) {
-                    input.value = mapping;
+                if (field === 'employerGroups') {
+                    let group = mapping;
+                    if (typeof group === 'string') {
+                        try { group = JSON.parse(group); } catch { group = {}; }
+                    }
+                    loadEmployerGroups(group);
+                } else {
+                    const input = document.getElementById(`mapping_${field}`);
+                    if (input) {
+                        input.value = mapping;
+                    }
                 }
             }
         }
