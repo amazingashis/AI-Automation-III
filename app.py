@@ -269,8 +269,15 @@ def generate_llm_mappings_endpoint():
                 reasoning = result.get('reasoning', '')
             global current_mappings
             if isinstance(llm_mappings, dict):
-                # Only update with known stage fields and valid string values
-                filtered = {k: v for k, v in llm_mappings.items() if k in STAGE_FIELDS and isinstance(v, str) and v.strip() and v.strip() != '{'}
+                # Normalize mapping keys to match STAGE_FIELDS (case-insensitive, strip)
+                stage_fields_norm = {sf.lower().strip(): sf for sf in STAGE_FIELDS}
+                filtered = {}
+                for k, v in llm_mappings.items():
+                    k_norm = k.lower().strip()
+                    if k_norm in stage_fields_norm and isinstance(v, str) and v.strip() and v.strip() != '{':
+                        filtered[stage_fields_norm[k_norm]] = v.strip().strip('"')
+                import sys
+                print(f"[DEBUG] Filtered mappings to update: {filtered}", file=sys.stderr)
                 current_mappings.update(filtered)
             # Print the full LLM output in the web app response
             return jsonify({'success': True, 'processing': False, 'mappings': llm_mappings, 'reasoning': reasoning, 'raw_response': result.get('raw_response', ''), 'llm_output': result})
