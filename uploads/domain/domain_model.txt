@@ -1,0 +1,25 @@
+Attribute,data_type,description,allowed_values,required,notes,Unnamed: 6
+memberFirst,string,Member's first name,,Yes,,
+memberLast,string,Member's last name,,Yes,,
+mbrDOB,date,Member's date of birth,YYYY-MM-DD,Yes,,
+mbrGender,enum,Member's gender,"M, F, U",Yes,"M=Male, F=Female, U=Unknown",
+ssn,string,Social Security Number,"9 digits (numeric, no dashes)",Yes,Mask/encrypt for privacy,
+memberID,string,Unique identifier for the member (Foreign Key),,Yes,FK to Member,
+enrollmentStatus,enum,Current enrollment status,"Active, Terminated, Pending, etc.",Yes,,
+enrollmentEffectiveDate,date,Date when eligibility became effective,YYYY-MM-DD (>= 2022-01-01),Yes,,
+terminationDate,date/null,Date when eligibility ended,YYYY-MM-DD or null,No,Null if still active,
+planID,string,Identifier for the health plan,,Yes,,
+product,string,Product name or code,,Yes,,
+lob,string,Line of Business,"e.g., Commercial, Medicare, Medicaid",Yes,,
+memberMonth,array of string,List of months member was eligible (inclusive between eff. and term. date),"[""YYYY-MM"", ...]",Yes,Calculated,
+dualEligibilityInd,boolean,Indicates if member has dual eligibility,true/false,No,,
+employerGroup,array of object,Array of employer group associations,See EmployerGroupObject below,No,,
+coverageDesc,enum,Coverage description,"Employee Only, Family, Employee + Children, Employee + Spouse",Yes,Only these values allow,
+Employer Group ,Array,,,,,
+,Attribute,Data Type,Description,Allowed Values / Format,Required,Notes
+,Attribute,Data Type,Description,Allowed Values / Format,Required,Notes
+,groupName,string,Name of the employer group,,Yes,
+,groupStatus,enum,Status of the group,"Active, Termed",Yes,
+,addressLine1,string,First line of address,,Yes,
+,addressLine2,string,Second line of address,,No,Optional
+,zip,string,ZIP code,5 or 9 digits,Yes,ZIP+4 allowed

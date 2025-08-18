@@ -1,0 +1,42 @@
+column_name,description,Example Value,data_type,Allowed Values / Format
+MemberID,Unique identifier for the member,300001,Integer,"Unique, 6 digits"
+SSN,Social Security Number (masked/fake for demo),123-45-6789,String,###-##-####
+FirstName,Member’s first name,Ava,String,
+LastName,Member’s last name,Thomas,String,
+Gender,Member’s gender,F,String,"M, F, O"
+DOB,Member’s date of birth,1988-04-12 00:00:00,Date,YYYY-MM-DD
+Address,Member’s street address,100 Sunrise Blvd,String,
+City,Member’s city,Austin,String,
+State,Member’s state,TX,String,2-letter US state code
+Zip,Member’s ZIP code,78701,String/Integer,5 digits
+Phone,Member’s phone number,5125551234,String,10 digits (no dashes)
+Email,Member’s email address,ava.thomas@email.com,String,
+EnrollmentStart,Coverage enrollment start date,2024-01-01 00:00:00,Date,YYYY-MM-DD
+EnrollmentEnd,Coverage enrollment end date,2024-12-31 00:00:00,Date,YYYY-MM-DD
+Relationship,Relationship to subscriber,Subscriber,String,"Subscriber, Spouse, Child, etc."
+MemberSeq,Sequence in the family unit,1,String/Integer,2 digits
+CoverageType,Type of benefit coverage,Medical,String,"Medical, Dental, Vision, etc."
+CoverageStatus,Status of the coverage,Active,String,"Active, Termed"
+GroupID,Unique identifier for employer/group,G3001,String,
+GroupName,Name of the employer/group,Capital Tech,String,
+GroupAddress,Employer/group address,900 Innovation Dr,String,
+GroupCity,Employer/group city,Austin,String,
+GroupState,Employer/group state,TX,String,2-letter US state code
+GroupZip,Employer/group ZIP code,78701,String/Integer,5 digits
+GroupStatus,Status of the employer/group,Active,String,"Active, Termed"
+PlanID,Insurance plan identifier,PL4001,String,
+PlanName,Insurance plan name,Capital Platinum PPO,String,
+PlanType,Plan type abbreviation,PPO,String,"PPO, HMO, EPO, POS, HSA"
+PlanEffectiveDate,Date plan became effective,2024-01-01 00:00:00,Date,YYYY-MM-DD
+PlanTerminationDate,Date plan is/was terminated,2024-12-31 00:00:00,Date,YYYY-MM-DD
+PCPName,Primary Care Physician name,Dr. Ben Ortiz,String,
+PCPNPI,National Provider Identifier for PCP,2109876543,String/Integer,10 digits
+SubscriberID,MemberID of the subscriber in the family unit,300001,Integer,Matches a MemberID in the file
+MaritalStatus,Member’s marital status,Married,String,"Single, Married, Divorced, etc."
+EmploymentStatus,Member’s employment status,Employed,String,"Employed, Student, Retired, etc."
+Language,Preferred language,English,String,"English, Spanish, Vietnamese, etc."
+Ethnicity,Member’s ethnicity,Hispanic,String,"White, Black, Asian, Hispanic, etc."
+MedicareID,Medicare Identifier (if any),112233445A,String,May be blank
+MedicaidID,Medicaid Identifier (if any),TX1122334,String,May be blank
+OtherInsurance,Indicates presence of other insurance,N,String,"Y, N"
+DisabilityStatus,Indicates disability status,N,String,"Y, N"
