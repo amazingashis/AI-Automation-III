@@ -215,10 +215,10 @@ def generate_llm_mappings_endpoint():
     import sys
     try:
         print("[INFO] Starting LLM mapping generation...", file=sys.stderr)
-    # Use uploaded files for context if present
-    domain_model = get_context_file(DOMAIN_MODEL_UPLOAD_PATH, DEFAULT_DOMAIN_MODEL)
-    data_dict = get_context_file(DATA_DICT_UPLOAD_PATH, DEFAULT_DATA_DICTIONARY)
-    extra_context = f"""
+        # Use uploaded files for context if present
+        domain_model = get_context_file(DOMAIN_MODEL_UPLOAD_PATH, DEFAULT_DOMAIN_MODEL)
+        data_dict = get_context_file(DATA_DICT_UPLOAD_PATH, DEFAULT_DATA_DICTIONARY)
+        extra_context = f"""
 {domain_model}\n\n{data_dict}\n\nTransformation Rules:\n{TRANSFORMATION_RULES}\n\nINSTRUCTIONS:\nReturn ONLY a single flat JSON dictionary where each key is a stage field from the list below, and each value is the mapping expression for that field.\nDo NOT include any nested keys, reasoning, SQL scripts, or extra information.\nDo NOT include a 'mappings' key, just the dictionary itself.\nIf a mapping is not possible, use an empty string as the value.\nStage fields: {', '.join(STAGE_FIELDS)}\n"""
         result = llm_generate_mappings(
             current_source_headers,
