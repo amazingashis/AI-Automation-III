@@ -317,25 +317,17 @@
                 return response.json();
             })
             .then(data => {
-                if (data.success) {
-                    // If llm_output is present, use it for mapping
-                    if (data.llm_output && data.llm_output.mappings) {
-                        let mappings = data.llm_output.mappings;
-                        // If nested 'mappings' key exists, use it
-                        if (typeof mappings === 'object' && mappings.mappings) {
-                            mappings = mappings.mappings;
-                        }
-                        currentMappings = { ...mappings };
-                    } else {
-                        currentMappings = { ...currentMappings, ...data.mappings };
-                    }
+                if (data.success && data.mappings) {
+                    currentMappings = { ...data.mappings };
                     loadMappingsIntoTable();
-                    // Show SQL scripts in a separate box if present
-                    let sqlScriptsHtml = '';
-                    if (data.llm_output && data.llm_output.sql_scripts) {
-                        sqlScriptsHtml = `<div class="card mt-3"><div class="card-header"><strong>SQL Scripts (Databricks)</strong></div><div class="card-body"><pre style='font-size:12px;'>${typeof data.llm_output.sql_scripts === 'object' ? Object.entries(data.llm_output.sql_scripts).map(([k,v]) => `${k}:\n${v}`).join('\n\n') : data.llm_output.sql_scripts}</pre></div></div>`;
-                    }
-                    // Show success message with reasoning and print full LLM output
+                }
+                // Show SQL scripts in a separate box if present
+                let sqlScriptsHtml = '';
+                if (data.llm_output && data.llm_output.sql_scripts) {
+                    sqlScriptsHtml = `<div class="card mt-3"><div class="card-header"><strong>SQL Scripts (Databricks)</strong></div><div class="card-body"><pre style='font-size:12px;'>${typeof data.llm_output.sql_scripts === 'object' ? Object.entries(data.llm_output.sql_scripts).map(([k,v]) => `${k}:\n${v}`).join('\n\n') : data.llm_output.sql_scripts}</pre></div></div>`;
+                }
+                // Show success message with reasoning and print full LLM output
+                if (data.success) {
                     statusDiv.innerHTML = `
                         <div class="alert alert-success">
                             <strong>AI Mappings Generated Successfully!</strong><br>
@@ -602,19 +594,23 @@
             });
         }
 
+        // Load mappings into the table
+        function loadMappingsIntoTable() {
+            for (const [field, mapping] of Object.entries(currentMappings)) {
+                const input = document.getElementById(`mapping_${field}`);
+                if (input) {
+                    input.value = mapping;
+                }
+            }
+        }
+
         // Load existing mappings into the table
         function loadExistingMappings() {
             fetch('/get_mappings')
             .then(response => response.json())
             .then(data => {
                 currentMappings = data;
-                // Populate the input fields with existing mappings
-                for (const [field, mapping] of Object.entries(data)) {
-                    const input = document.getElementById(`mapping_${field}`);
-                    if (input) {
-                        input.value = mapping;
-                    }
-                }
+                loadMappingsIntoTable();
             });
         }
 
