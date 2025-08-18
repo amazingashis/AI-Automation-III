@@ -265,10 +265,13 @@ def generate_llm_mappings_endpoint():
                 llm_mappings = mappings.get('mappings', {})
                 reasoning = mappings.get('reasoning', result.get('reasoning', ''))
             else:
-                llm_mappings = mappings or {}
+                llm_mappings = mappings if isinstance(mappings, dict) else {}
                 reasoning = result.get('reasoning', '')
             global current_mappings
-            current_mappings.update(llm_mappings)
+            if isinstance(llm_mappings, dict):
+                # Only update with known stage fields and valid string values
+                filtered = {k: v for k, v in llm_mappings.items() if k in STAGE_FIELDS and isinstance(v, str) and v.strip() and v.strip() != '{'}
+                current_mappings.update(filtered)
             # Print the full LLM output in the web app response
             return jsonify({'success': True, 'processing': False, 'mappings': llm_mappings, 'reasoning': reasoning, 'raw_response': result.get('raw_response', ''), 'llm_output': result})
         return jsonify(result)
