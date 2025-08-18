@@ -242,7 +242,9 @@ def generate_llm_mappings_endpoint():
     global current_source_headers, current_source_data
     if not current_source_headers:
         return jsonify({'error': 'No source file uploaded'}), 400
+    import sys
     try:
+        print("[INFO] Starting LLM mapping generation...", file=sys.stderr)
         # Compose extra context for LLM prompt (domain model, data dictionary, transformation rules, SQL script request)
         extra_context = f"""
 {DOMAIN_MODEL}\n\n{DATA_DICTIONARY}\n\nTransformation Rules:\n{TRANSFORMATION_RULES}\n\nFor each transformation rule, also generate a sample SQL script that demonstrates how to implement that transformation in Databricks SQL (ANSI SQL compatible with Databricks).\n\nPlease provide the SQL mapping expressions for each stage field using the transformation rules, based on the source data sample. Respond in JSON with 'mappings', 'reasoning', and 'sql_scripts' (where 'sql_scripts' is a dictionary with the transformation rule as the key and the SQL script as the value, and all SQL must be valid in Databricks SQL).\n"""
@@ -250,11 +252,11 @@ def generate_llm_mappings_endpoint():
             current_source_headers,
             current_source_data[:10],  # Top 10 rows
             STAGE_FIELDS,
-            DATABRICKS_BASE_URL,
-            DATABRICKS_MODEL,
-            DATABRICKS_TOKEN,
+            token=DATABRICKS_TOKEN,
             extra_context=extra_context
         )
+        print("[INFO] LLM response received:", file=sys.stderr)
+        print(result, file=sys.stderr)
         if result['success']:
             # Handle nested 'mappings' key if present (as in new LLM output)
             mappings = result.get('mappings')
@@ -268,14 +270,15 @@ def generate_llm_mappings_endpoint():
             global current_mappings
             current_mappings.update(llm_mappings)
             # Print the full LLM output in the web app response
-            return jsonify({'success': True, 'mappings': llm_mappings, 'reasoning': reasoning, 'raw_response': result.get('raw_response', ''), 'llm_output': result})
+            return jsonify({'success': True, 'processing': False, 'mappings': llm_mappings, 'reasoning': reasoning, 'raw_response': result.get('raw_response', ''), 'llm_output': result})
         return jsonify(result)
     except Exception as e:
         # If the error is about Databricks IP ACL, provide a clear message
         error_msg = str(e)
+        print(f"[ERROR] LLM mapping generation failed: {error_msg}", file=sys.stderr)
         if 'blocked by Databricks IP ACL' in error_msg or '403' in error_msg:
-            return jsonify({'error': 'Access denied: Your IP address is blocked by Databricks IP ACL. Please contact your Databricks admin to allow your IP or use an allowed network.'}), 403
-        return jsonify({'error': f'Failed to generate LLM mappings: {error_msg}'}), 500
+            return jsonify({'error': 'Access denied: Your IP address is blocked by Databricks IP ACL. Please contact your Databricks admin to allow your IP or use an allowed network.', 'processing': False}), 403
+        return jsonify({'error': f'Failed to generate LLM mappings: {error_msg}', 'processing': False}), 500
 
 def validate_mapping_expression(expression):
     """Basic validation for mapping expressions"""
