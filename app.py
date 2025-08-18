@@ -363,10 +363,18 @@ Stage fields: {', '.join(STAGE_FIELDS)}
             filtered = {}
             for k, v in llm_mappings.items():
                 k_norm = k.lower().strip()
-                if k_norm == 'employergroups' and isinstance(v, dict):
-                    # Only keep allowed subfields
-                    allowed_keys = ['groupName', 'groupStatus', 'addressLine1', 'addressLine2', 'zip']
-                    filtered['employerGroups'] = {subk: v.get(subk, '') for subk in allowed_keys}
+                if k_norm == 'employergroups':
+                    # Handle both dict and stringified dict
+                    group_obj = v
+                    if isinstance(group_obj, str):
+                        try:
+                            import json as _json
+                            group_obj = _json.loads(group_obj)
+                        except Exception:
+                            group_obj = {}
+                    if isinstance(group_obj, dict):
+                        allowed_keys = ['groupName', 'groupStatus', 'addressLine1', 'addressLine2', 'zip']
+                        filtered['employerGroups'] = {subk: group_obj.get(subk, '') for subk in allowed_keys}
                 elif k_norm in stage_fields_norm and isinstance(v, str):
                     filtered[stage_fields_norm[k_norm]] = v.strip().strip('"')
             import sys
