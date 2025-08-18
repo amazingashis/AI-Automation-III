@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Mapping Tool - Eligibility</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .mapping-container {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background-color: #f8f9fa;
+        }
+        .stage-field {
+            background-color: #e3f2fd;
+            padding: 8px;
+            border-radius: 5px;
+            border-left: 4px solid #2196f3;
+            font-weight: bold;
+        }
+        .mapping-input {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        .source-header {
+            background-color: #fff3e0;
+            padding: 8px;
+            border-radius: 3px;
+            margin: 2px;
+            cursor: pointer;
+            border: 1px solid #ffcc02;
+            font-size: 12px;
+        }
+        .source-header:hover {
+            background-color: #ffe0b2;
+        }
+        .transformation-rule {
+            background-color: #f3e5f5;
+            padding: 8px;
+            border-radius: 3px;
+            margin: 2px;
+            cursor: pointer;
+            border: 1px solid #9c27b0;
+            font-size: 12px;
+        }
+        .transformation-rule:hover {
+            background-color: #e1bee7;
+        }
+        .preview-result {
+            background-color: #e8f5e8;
+            border: 1px solid #4caf50;
+            padding: 5px;
+            border-radius: 3px;
+            font-size: 11px;
+            margin-top: 5px;
+        }
+        .sidebar {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .function-helper {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .table th {
+            background-color: #343a40 !important;
+            color: white !important;
+            font-weight: bold;
+        }
+        .table td {
+            vertical-align: middle;
+            padding: 8px;
+        }
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+        }
+        .input-group-append .btn {
+            border-radius: 0;
+        }
+        .input-group-append .btn:last-child {
+            border-top-right-radius: 0.25rem;
+            border-bottom-right-radius: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <div class="col-12">
+                <h1 class="text-center mb-4">
+                    <i class="fas fa-exchange-alt"></i> Data Mapping Tool - Eligibility
+                </h1>
+            </div>
+        </div>
+
+        <!-- Source File Upload Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-upload"></i> Upload Source File</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="uploadForm" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <input type="file" class="form-control" id="sourceFile" name="source_file" accept=".csv" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-upload"></i> Upload and Read Headers
+                            </button>
+                            <button type="button" class="btn btn-success ms-2" id="generateLLMBtn" disabled>
+                                <i class="fas fa-magic"></i> Generate Mappings with AI
+                            </button>
+                        </form>
+                        <div id="uploadStatus" class="mt-3"></div>
+                        
+                        <!-- LLM Configuration (Collapsible) -->
+                        <div class="accordion mt-3" id="llmConfigAccordion">
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                            data-bs-target="#llmConfig" aria-expanded="false">
+                                        <i class="fas fa-cog"></i>&nbsp; LLM Configuration (Optional)
+                                    </button>
+                                </h2>
+                                <div id="llmConfig" class="accordion-collapse collapse">
+                                    <div class="accordion-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <label for="lmstudioUrl" class="form-label">LMStudio URL:</label>
+                                                <input type="text" class="form-control" id="lmstudioUrl" 
+                                                       value="http://localhost:1234/v1" placeholder="LMStudio API URL">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label for="llmModel" class="form-label">Model:</label>
+                                                <input type="text" class="form-control" id="llmModel" 
+                                                       value="google/gemma-3n-e4b" placeholder="Model name">
+                                            </div>
+                                        </div>
+                                        <div class="mt-2">
+                                            <small class="text-muted">
+                                                Make sure LMStudio is running with the specified model loaded.
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Main Mapping Interface -->
+            <div class="col-lg-8">
+                <div class="mapping-container">
+                    <h4><i class="fas fa-cogs"></i> Data Mapping Interface</h4>
+                    
+                    <!-- Stage Fields Mapping Table -->
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th style="width: 40%;">Stage Fields</th>
+                                    <th style="width: 60%;">Mapping</th>
+                                </tr>
+                            </thead>
+                            <tbody id="mappingTableBody">
+                                {% for field in stage_fields %}
+                                <tr>
+                                    <td>
+                                        <div class="stage-field">
+                                            <strong>{{ field }}</strong>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="input-group">
+                                            <textarea 
+                                                id="mapping_{{ field }}" 
+                                                class="form-control mapping-input" 
+                                                rows="2" 
+                                                placeholder="Enter mapping expression (e.g., Upper(Trim(FirstName)))"
+                                                data-stage-field="{{ field }}"></textarea>
+                                            <div class="input-group-append">
+                                                <button class="btn btn-outline-secondary btn-sm" type="button" 
+                                                        onclick="clearMapping('{{ field }}')">
+                                                    <i class="fas fa-eraser"></i>
+                                                </button>
+                                                <button class="btn btn-outline-info btn-sm" type="button" 
+                                                        onclick="previewMapping('{{ field }}')">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                <button class="btn btn-success btn-sm" type="button" 
+                                                        onclick="saveIndividualMapping('{{ field }}')">
+                                                    <i class="fas fa-save"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div id="preview_{{ field }}" class="mt-1"></div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Bulk Actions -->
+                    <div class="mt-3">
+                        <button type="button" class="btn btn-primary" onclick="saveAllMappings()">
+                            <i class="fas fa-save"></i> Save All Mappings
+                        </button>
+                        <button type="button" class="btn btn-warning" onclick="clearAllMappings()">
+                            <i class="fas fa-trash"></i> Clear All Mappings
+                        </button>
+                        <button type="button" class="btn btn-info" onclick="exportMappings()">
+                            <i class="fas fa-download"></i> Export Mappings
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="loadSampleMappings()">
+                            <i class="fas fa-magic"></i> Load Sample Mappings
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar with Headers and Rules -->
+            <div class="col-lg-4">
+                <!-- Source Headers -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h6><i class="fas fa-table"></i> Source File Headers</h6>
+                    </div>
+                    <div class="card-body sidebar" id="sourceHeaders">
+                        <em class="text-muted">Upload a source file to see headers</em>
+                    </div>
+                </div>
+
+                <!-- Transformation Rules -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h6><i class="fas fa-magic"></i> Transformation Rules</h6>
+                    </div>
+                    <div class="card-body sidebar">
+                        {% for rule, syntax in transformation_rules.items() %}
+                        <div class="transformation-rule" onclick="insertText('{{ syntax }}')">
+                            <strong>{{ rule }}</strong><br>
+                            <small class="text-muted">{{ syntax }}</small>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Function Helper -->
+                <div class="function-helper">
+                    <h6><i class="fas fa-info-circle"></i> Function Helper</h6>
+                    <small>
+                        <strong>Examples:</strong><br>
+                        • <code>Upper(Trim(FirstName))</code><br>
+                        • <code>Concatenate(FirstName, " ", LastName)</code><br>
+                        • <code>Substring(SSN, 0, 3)</code><br>
+                        • <code>Replace(Phone, "-", "")</code><br>
+                        <br>
+                        <strong>Tips:</strong><br>
+                        • Click on source headers to insert field names<br>
+                        • Click on transformation rules to insert functions<br>
+                        • Focus on a mapping field first, then click headers/rules<br>
+                        • Use Ctrl+S to save individual mappings<br>
+                        • Use the preview button to test transformations
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Global variables
+        let currentMappings = {};
+        let sourceHeaders = [];
+
+        // File upload handling
+        document.getElementById('uploadForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData();
+            const fileInput = document.getElementById('sourceFile');
+            formData.append('source_file', fileInput.files[0]);
+
+            fetch('/upload_source_file', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    sourceHeaders = data.headers;
+                    displaySourceHeaders(data.headers);
+                    document.getElementById('uploadStatus').innerHTML = 
+                        `<div class="alert alert-success">File "${data.filename}" uploaded successfully! (${data.sample_rows} sample rows loaded)</div>`;
+                    
+                    // Enable LLM mapping generation button
+                    document.getElementById('generateLLMBtn').disabled = false;
+                } else {
+                    document.getElementById('uploadStatus').innerHTML = 
+                        `<div class="alert alert-danger">Error: ${data.error}</div>`;
+                }
+            })
+            .catch(error => {
+                document.getElementById('uploadStatus').innerHTML = 
+                    `<div class="alert alert-danger">Error uploading file: ${error}</div>`;
+            });
+        });
+
+        // LLM Mapping Generation
+        document.getElementById('generateLLMBtn').addEventListener('click', function() {
+            generateLLMMappings();
+        });
+
+        function generateLLMMappings() {
+            const button = document.getElementById('generateLLMBtn');
+            const originalText = button.innerHTML;
+            
+            // Show loading state
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating Mappings...';
+            
+            // Get LLM configuration
+            const lmstudioUrl = document.getElementById('lmstudioUrl').value;
+            const llmModel = document.getElementById('llmModel').value;
+            
+            // Show initial status
+            const statusDiv = document.getElementById('uploadStatus');
+            statusDiv.innerHTML = `<div class="alert alert-info">Connecting to LMStudio at ${lmstudioUrl} with model ${llmModel}...</div>`;
+            
+            fetch('/generate_llm_mappings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    lmstudio_url: lmstudioUrl,
+                    model: llmModel
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Update mappings
+                    currentMappings = { ...currentMappings, ...data.mappings };
+                    loadMappingsIntoTable();
+                    
+                    // Show success message with reasoning
+                    statusDiv.innerHTML = `
+                        <div class="alert alert-success">
+                            <strong>AI Mappings Generated Successfully!</strong><br>
+                            <small>${data.reasoning || 'Mappings generated based on field analysis.'}</small>
+                            ${data.raw_response ? `<br><br><details><summary>View Full Response</summary><pre>${data.raw_response}</pre></details>` : ''}
+                        </div>
+                    `;
+                } else {
+                    statusDiv.innerHTML = `
+                        <div class="alert alert-danger">
+                            <strong>LLM Error:</strong> ${data.error}<br>
+                            <small>
+                                <strong>Troubleshooting:</strong><br>
+                                1. Ensure LMStudio is running on ${lmstudioUrl}<br>
+                                2. Check that model "${llmModel}" is loaded<br>
+                                3. Verify LMStudio server is accessible<br>
+                                4. Check firewall/network settings
+                            </small>
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                statusDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        <strong>Connection Error:</strong> ${error.message}<br>
+                        <small>
+                            <strong>Common Solutions:</strong><br>
+                            • Start LMStudio and load the model<br>
+                            • Check if LMStudio server is running on ${lmstudioUrl}<br>
+                            • Try changing the URL to http://127.0.0.1:1234/v1<br>
+                            • Ensure no firewall is blocking the connection<br>
+                            • Check LMStudio console for errors
+                        </small>
+                    </div>
+                `;
+                console.error('LLM Generation Error:', error);
+            })
+            .finally(() => {
+                // Restore button state
+                button.disabled = false;
+                button.innerHTML = originalText;
+            });
+        }
+
+        // Display source headers in sidebar
+        function displaySourceHeaders(headers) {
+            const container = document.getElementById('sourceHeaders');
+            container.innerHTML = '';
+            
+            headers.forEach(header => {
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'source-header';
+                headerDiv.textContent = header;
+                headerDiv.onclick = () => insertText(header);
+                headerDiv.title = 'Click to insert into focused mapping field';
+                container.appendChild(headerDiv);
+            });
+        }
+
+        // Insert text into specific mapping field
+        function insertText(text, fieldName = null) {
+            let textarea;
+            if (fieldName) {
+                textarea = document.getElementById(`mapping_${fieldName}`);
+            } else {
+                // Find the currently focused textarea or use the first one
+                textarea = document.activeElement;
+                if (!textarea || !textarea.classList.contains('mapping-input')) {
+                    textarea = document.querySelector('.mapping-input');
+                }
+            }
+            
+            if (textarea) {
+                const start = textarea.selectionStart;
+                const end = textarea.selectionEnd;
+                const currentValue = textarea.value;
+                
+                textarea.value = currentValue.substring(0, start) + text + currentValue.substring(end);
+                textarea.focus();
+                textarea.setSelectionRange(start + text.length, start + text.length);
+            }
+        }
+
+        // Save individual mapping
+        function saveIndividualMapping(fieldName) {
+            const mappingExpression = document.getElementById(`mapping_${fieldName}`).value;
+            
+            if (!mappingExpression.trim()) {
+                alert('Please enter a mapping expression');
+                return;
+            }
+
+            fetch('/save_mapping', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    stage_field: fieldName,
+                    mapping_expression: mappingExpression
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    currentMappings[fieldName] = mappingExpression;
+                    // Show success indicator
+                    const previewDiv = document.getElementById(`preview_${fieldName}`);
+                    previewDiv.innerHTML = '<small class="text-success">✓ Saved</small>';
+                    setTimeout(() => {
+                        previewDiv.innerHTML = '';
+                    }, 2000);
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            });
+        }
+
+        // Preview mapping for a specific field
+        function previewMapping(fieldName) {
+            const expression = document.getElementById(`mapping_${fieldName}`).value;
+            const sampleData = prompt('Enter sample data for preview:', 'John Doe');
+            
+            if (!expression || !sampleData) {
+                return;
+            }
+
+            fetch('/preview_transformation', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    expression: expression,
+                    sample_data: sampleData
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const previewDiv = document.getElementById(`preview_${fieldName}`);
+                if (data.success) {
+                    previewDiv.innerHTML = `<div class="preview-result">Preview: <strong>${data.result}</strong></div>`;
+                } else {
+                    previewDiv.innerHTML = `<small class="text-danger">Error: ${data.error}</small>`;
+                }
+            });
+        }
+
+        // Clear individual mapping
+        function clearMapping(fieldName) {
+            document.getElementById(`mapping_${fieldName}`).value = '';
+            document.getElementById(`preview_${fieldName}`).innerHTML = '';
+        }
+
+        // Save all mappings
+        function saveAllMappings() {
+            const mappings = {};
+            let hasAnyMapping = false;
+
+            document.querySelectorAll('.mapping-input').forEach(input => {
+                const fieldName = input.getAttribute('data-stage-field');
+                const mapping = input.value.trim();
+                if (mapping) {
+                    mappings[fieldName] = mapping;
+                    hasAnyMapping = true;
+                }
+            });
+
+            if (!hasAnyMapping) {
+                alert('No mappings to save');
+                return;
+            }
+
+            // Save each mapping
+            const promises = [];
+            for (const [fieldName, mapping] of Object.entries(mappings)) {
+                promises.push(
+                    fetch('/save_mapping', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            stage_field: fieldName,
+                            mapping_expression: mapping
+                        })
+                    })
+                );
+            }
+
+            Promise.all(promises)
+                .then(responses => Promise.all(responses.map(r => r.json())))
+                .then(results => {
+                    const errors = results.filter(r => !r.success);
+                    if (errors.length === 0) {
+                        alert('All mappings saved successfully!');
+                        currentMappings = {...currentMappings, ...mappings};
+                    } else {
+                        alert(`Some mappings failed to save: ${errors.map(e => e.error).join(', ')}`);
+                    }
+                });
+        }
+
+        // Load sample mappings
+        function loadSampleMappings() {
+            if (confirm('Load sample mappings? This will overwrite existing mappings.')) {
+                const sampleMappings = {
+                    'member_first_name': 'Upper(Trim(FirstName))',
+                    'member_last_name': 'Upper(Trim(LastName))',
+                    'mbrDOB': 'DOB',
+                    'mbrGender': 'Upper(Gender)',
+                    'ssn': 'SSN',
+                    'memberID': 'MemberID',
+                    'enrollmentStatus': 'CoverageStatus'
+                };
+
+                for (const [field, mapping] of Object.entries(sampleMappings)) {
+                    const input = document.getElementById(`mapping_${field}`);
+                    if (input) {
+                        input.value = mapping;
+                    }
+                }
+                alert('Sample mappings loaded!');
+            }
+        }
+
+        // Clear all mappings
+        function clearAllMappings() {
+            if (confirm('Clear all mappings?')) {
+                fetch('/clear_mappings', {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    currentMappings = {};
+                    // Clear all input fields
+                    document.querySelectorAll('.mapping-input').forEach(input => {
+                        input.value = '';
+                    });
+                    // Clear all preview divs
+                    document.querySelectorAll('[id^="preview_"]').forEach(div => {
+                        div.innerHTML = '';
+                    });
+                    alert('All mappings cleared!');
+                });
+            }
+        }
+
+        // Export mappings
+        function exportMappings() {
+            fetch('/export_mappings')
+            .then(response => response.json())
+            .then(data => {
+                const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'eligibility_mappings.json';
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+        }
+
+        // Load existing mappings into the table
+        function loadExistingMappings() {
+            fetch('/get_mappings')
+            .then(response => response.json())
+            .then(data => {
+                currentMappings = data;
+                // Populate the input fields with existing mappings
+                for (const [field, mapping] of Object.entries(data)) {
+                    const input = document.getElementById(`mapping_${field}`);
+                    if (input) {
+                        input.value = mapping;
+                    }
+                }
+            });
+        }
+
+        // Initialize the interface
+        document.addEventListener('DOMContentLoaded', function() {
+            loadExistingMappings();
+            
+            // Add event listeners for better UX
+            document.querySelectorAll('.mapping-input').forEach(input => {
+                input.addEventListener('keydown', function(e) {
+                    // Save with Ctrl+S
+                    if (e.ctrlKey && e.key === 's') {
+                        e.preventDefault();
+                        const fieldName = this.getAttribute('data-stage-field');
+                        saveIndividualMapping(fieldName);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
