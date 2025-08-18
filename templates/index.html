@@ -100,8 +100,62 @@
             </div>
         </div>
 
-    <!-- Main Content Row -->
-    <div class="row">
+        <!-- Upload Section at Top -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-upload"></i> Upload Source File & Context</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="uploadForm" enctype="multipart/form-data" class="row g-2 align-items-center mb-2">
+                            <div class="col-auto flex-grow-1">
+                                <input type="file" class="form-control" id="sourceFile" name="source_file" accept=".csv" required>
+                            </div>
+                            <div class="col-auto">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-upload"></i> Upload Source File
+                                </button>
+                            </div>
+                            <div class="col-auto">
+                                <button type="button" class="btn btn-success" id="generateLLMBtn" disabled>
+                                    <i class="fas fa-magic"></i> Generate Mappings
+                                </button>
+                            </div>
+                        </form>
+                        <form id="uploadDataDictForm" enctype="multipart/form-data" class="row g-2 align-items-center mb-2">
+                            <div class="col-auto flex-grow-1">
+                                <input type="file" class="form-control" id="dataDictFile" name="data_dict_file" accept=".txt,.csv,.xlsx">
+                            </div>
+                            <div class="col-auto">
+                                <button type="submit" class="btn btn-outline-primary">
+                                    <i class="fas fa-upload"></i> Upload Data Dictionary
+                                </button>
+                            </div>
+                            <div class="col-auto">
+                                <span id="dataDictStatus"></span>
+                            </div>
+                        </form>
+                        <form id="uploadDomainModelForm" enctype="multipart/form-data" class="row g-2 align-items-center mb-2">
+                            <div class="col-auto flex-grow-1">
+                                <input type="file" class="form-control" id="domainModelFile" name="domain_model_file" accept=".txt,.csv,.xlsx">
+                            </div>
+                            <div class="col-auto">
+                                <button type="submit" class="btn btn-outline-primary">
+                                    <i class="fas fa-upload"></i> Upload Domain Model
+                                </button>
+                            </div>
+                            <div class="col-auto">
+                                <span id="domainModelStatus"></span>
+                            </div>
+                        </form>
+                        <div id="uploadStatus" class="mt-2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Main Content Row -->
+        <div class="row">
             <!-- Main Mapping Interface -->
             <div class="col-lg-8">
                 <div class="mapping-container">
@@ -173,41 +227,13 @@
 
             <!-- Sidebar with Headers and Rules -->
             <div class="col-lg-4">
-                <!-- Upload Forms & Source File Names -->
+                <!-- Uploaded Source Files List -->
                 <div class="card mb-3">
                     <div class="card-header">
-                        <h6><i class="fas fa-upload"></i> Upload Files</h6>
+                        <h6><i class="fas fa-file"></i> Uploaded Source Files</h6>
                     </div>
                     <div class="card-body sidebar">
-                        <form id="uploadForm" enctype="multipart/form-data">
-                            <div class="mb-3">
-                                <input type="file" class="form-control" id="sourceFile" name="source_file" accept=".csv" required>
-                            </div>
-                            <button type="submit" class="btn btn-primary btn-sm">
-                                <i class="fas fa-upload"></i> Upload Source File
-                            </button>
-                            <button type="button" class="btn btn-success btn-sm ms-2" id="generateLLMBtn" disabled>
-                                <i class="fas fa-magic"></i> Generate Mappings
-                            </button>
-                        </form>
-                        <form id="uploadDataDictForm" enctype="multipart/form-data" class="mt-3">
-                            <label for="dataDictFile" class="form-label">Data Dictionary (txt, csv, xlsx):</label>
-                            <input type="file" class="form-control" id="dataDictFile" name="data_dict_file" accept=".txt,.csv,.xlsx">
-                            <button type="submit" class="btn btn-outline-primary btn-sm mt-2">Upload Data Dictionary</button>
-                            <span id="dataDictStatus" class="ms-2"></span>
-                        </form>
-                        <form id="uploadDomainModelForm" enctype="multipart/form-data" class="mt-3">
-                            <label for="domainModelFile" class="form-label">Domain Model (txt, csv, xlsx):</label>
-                            <input type="file" class="form-control" id="domainModelFile" name="domain_model_file" accept=".txt,.csv,.xlsx">
-                            <button type="submit" class="btn btn-outline-primary btn-sm mt-2">Upload Domain Model</button>
-                            <span id="domainModelStatus" class="ms-2"></span>
-                        </form>
-                        <div id="uploadStatus" class="mt-3"></div>
-                        <hr>
-                        <div>
-                            <strong>Uploaded Source Files:</strong>
-                            <ul id="sourceFileList" class="mb-2"></ul>
-                        </div>
+                        <ul id="sourceFileList" class="mb-2"></ul>
                     </div>
                 </div>
                 <!-- Source Headers -->
