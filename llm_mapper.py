@@ -7,7 +7,7 @@ using AI analysis of source data and target stage fields.
 
 import json
 import openai
-import requests
+    # requests import removed (no longer needed)
 from typing import List, Dict, Any, Optional
 
 
@@ -73,7 +73,7 @@ class LLMMapper:
                 'raw_response': api_response.get('choices', [{}])[0].get('message', {}).get('content', '')
             }
         except openai.OpenAIError as e:
-            # Handle OpenAI/Databricks API errors
+            # Handle Databricks API errors
             error_message = str(e)
             if '403' in error_message or 'blocked by Databricks IP ACL' in error_message:
                 return {

@@ -121,38 +121,7 @@
                         </form>
                         <div id="uploadStatus" class="mt-3"></div>
                         
-                        <!-- LLM Configuration (Collapsible) -->
-                        <div class="accordion mt-3" id="llmConfigAccordion">
-                            <div class="accordion-item">
-                                <h2 class="accordion-header">
-                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
-                                            data-bs-target="#llmConfig" aria-expanded="false">
-                                        <i class="fas fa-cog"></i>&nbsp; LLM Configuration (Optional)
-                                    </button>
-                                </h2>
-                                <div id="llmConfig" class="accordion-collapse collapse">
-                                    <div class="accordion-body">
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <label for="lmstudioUrl" class="form-label">LMStudio URL:</label>
-                                                <input type="text" class="form-control" id="lmstudioUrl" 
-                                                       value="https://dbc-3735add4-1cb6.cloud.databricks.com/serving-endpoints" placeholder="URL">
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label for="llmModel" class="form-label">Model:</label>
-                                                <input type="text" class="form-control" id="llmModel" 
-                                                       value="databricks-claude-sonnet-4" placeholder="Model name">
-                                            </div>
-                                        </div>
-                                        <div class="mt-2">
-                                            <small class="text-muted">
-                                                Make sure LMStudio is running with the specified model loaded.
-                                            </small>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+
                     </div>
                 </div>
             </div>
@@ -331,23 +300,15 @@
             button.disabled = true;
             button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating Mappings...';
             
-            // Get LLM configuration
-            const lmstudioUrl = document.getElementById('lmstudioUrl').value;
-            const llmModel = document.getElementById('llmModel').value;
-            
             // Show initial status
             const statusDiv = document.getElementById('uploadStatus');
-            statusDiv.innerHTML = `<div class="alert alert-info">Connecting to LMStudio at ${lmstudioUrl} with model ${llmModel}...</div>`;
-            
+            statusDiv.innerHTML = `<div class="alert alert-info">Generating mappings using Databricks LLM...</div>`;
             fetch('/generate_llm_mappings', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    lmstudio_url: lmstudioUrl,
-                    model: llmModel
-                })
+                body: JSON.stringify({})
             })
             .then(response => {
                 if (!response.ok) {
@@ -357,16 +318,25 @@
             })
             .then(data => {
                 if (data.success) {
-                    // Update mappings
-                    currentMappings = { ...currentMappings, ...data.mappings };
+                    // If llm_output is present, use it for mapping
+                    if (data.llm_output && data.llm_output.mappings) {
+                        let mappings = data.llm_output.mappings;
+                        // If nested 'mappings' key exists, use it
+                        if (typeof mappings === 'object' && mappings.mappings) {
+                            mappings = mappings.mappings;
+                        }
+                        currentMappings = { ...mappings };
+                    } else {
+                        currentMappings = { ...currentMappings, ...data.mappings };
+                    }
                     loadMappingsIntoTable();
-                    
-                    // Show success message with reasoning
+                    // Show success message with reasoning and print full LLM output
                     statusDiv.innerHTML = `
                         <div class="alert alert-success">
                             <strong>AI Mappings Generated Successfully!</strong><br>
                             <small>${data.reasoning || 'Mappings generated based on field analysis.'}</small>
                             ${data.raw_response ? `<br><br><details><summary>View Full Response</summary><pre>${data.raw_response}</pre></details>` : ''}
+                            <br><br><details><summary>LLM Output (Full)</summary><pre>${JSON.stringify(data.llm_output, null, 2)}</pre></details>
                         </div>
                     `;
                 } else {

@@ -69,10 +69,23 @@ DATABRICKS_TOKEN = os.environ.get('DATABRICKS_TOKEN')
 
 @app.route('/')
 def index():
+    # Read input file headers and sample data for display
+    sample_headers = []
+    sample_rows = []
+    try:
+        csv_path = os.path.join('source_file', 'member_enrollment_file.csv')
+        with open(csv_path, 'r', encoding='utf-8') as f:
+            import csv
+            reader = csv.reader(f)
+            sample_headers = next(reader)
+            sample_rows = [row for _, row in zip(range(10), reader)]
+    except Exception:
+        pass
     return render_template('index.html', 
                          stage_fields=STAGE_FIELDS, 
                          transformation_rules=TRANSFORMATION_RULES,
-                         source_headers=current_source_headers,
+                         source_headers=sample_headers,
+                         source_sample_rows=sample_rows,
                          mappings=current_mappings)
 
 @app.route('/upload_source_file', methods=['POST'])
@@ -174,9 +187,19 @@ def generate_llm_mappings_endpoint():
             DATABRICKS_TOKEN
         )
         if result['success']:
-            # Update current mappings with LLM suggestions
+            # Handle nested 'mappings' key if present (as in new LLM output)
+            mappings = result.get('mappings')
+            if isinstance(mappings, dict) and 'mappings' in mappings:
+                # If LLM returned a nested 'mappings' dict, use it
+                llm_mappings = mappings.get('mappings', {})
+                reasoning = mappings.get('reasoning', result.get('reasoning', ''))
+            else:
+                llm_mappings = mappings or {}
+                reasoning = result.get('reasoning', '')
             global current_mappings
-            current_mappings.update(result['mappings'])
+            current_mappings.update(llm_mappings)
+            # Print the full LLM output in the web app response
+            return jsonify({'success': True, 'mappings': llm_mappings, 'reasoning': reasoning, 'raw_response': result.get('raw_response', ''), 'llm_output': result})
         return jsonify(result)
     except Exception as e:
         # If the error is about Databricks IP ACL, provide a clear message
