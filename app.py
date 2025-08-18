@@ -309,7 +309,7 @@ def generate_llm_mappings_endpoint():
             llm_context = build_llm_context(data_dict_df, domain_model_df)
         except Exception as e:
             llm_context = f"[ERROR] Could not parse context files: {e}"
-    extra_context = f"""
+        extra_context = f"""
 {llm_context}
 
 INSTRUCTIONS:
