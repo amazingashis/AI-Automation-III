@@ -1,5 +1,8 @@
 import os
 from llm_mapper import generate_mappings
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Databricks API token from environment
 DATABRICKS_TOKEN = os.environ.get('DATABRICKS_TOKEN')
@@ -57,7 +60,6 @@ Eligibility Domain Model:
 - lob: Line of business
 - memberMonth: Number of member months
 - dualEligibilityInd: Dual eligibility indicator
-- employerGroup: Employer group name
 - coverageDesc: Coverage description
 - Employer Group: Employer group (array groupName (Name of the employer group), groupStatus (Status of the group), addressLine1 (First line of address), addressLine2 (Second line of address), zip (ZIP code))
 """
