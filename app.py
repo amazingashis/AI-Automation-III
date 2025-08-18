@@ -10,71 +10,41 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-# Domain model and data dictionary context (as strings for LLM prompt)
-DOMAIN_MODEL = """
-Eligibility Domain Model:
-- memberFirst: First name of the member
-- memberLast: Last name of the member
-- mbrDOB: Date of birth
-- mbrGender: Gender
-- ssn: Social Security Number
-- memberID: Unique member identifier
-- enrollmentStatus: Enrollment status
-- enrollmentEffectiveDate: Enrollment effective date
-- terminationDate: Termination date
-- planID: Plan identifier
-- product: Product type
-- lob: Line of business
-- memberMonth: Number of member months
-- dualEligibilityInd: Dual eligibility indicator
-- coverageDesc: Coverage description
-- Employer Group: Employer group (array groupName (Name of the employer group), groupStatus (Status of the group), addressLine1 (First line of address), addressLine2 (Second line of address), zip (ZIP code))
-"""
 
-DATA_DICTIONARY = """
-Source Data Dictionary:
-MemberID : Unique identifier for the member
-SSN : Social Security Number (masked/fake for demo)
-FirstName : Member first name
-LastName : Member last name
-Gender : Member gender
-DOB : Member date of birth
-Address : Member street address
-City : Member city
-State : Member state
-Zip : Member ZIP code
-Phone : Member phone number
-Email : Member email address
-EnrollmentStart : Coverage enrollment start date
-EnrollmentEnd : Coverage enrollment end date
-Relationship : Relationship to subscriber
-MemberSeq : Sequence in the family unit
-CoverageType : Type of benefit coverage
-CoverageStatus : Status of the coverage
-GroupID : Unique identifier for employer/group
-GroupName : Name of the employer/group
-GroupAddress : Employer/group address
-GroupCity : Employer/group city
-GroupState : Employer/group state
-GroupZip : Employer/group ZIP code
-GroupStatus : Status of the employer/group
-PlanID : Insurance plan identifier
-PlanName : Insurance plan name
-PlanType : Plan type abbreviation
-PlanEffectiveDate : Date plan became effective
-PlanTerminationDate : Date plan is/was terminated
-PCPName : Primary Care Physician name
-PCPNPI : National Provider Identifier for PCP
-SubscriberID : MemberID of the subscriber in the family unit
-MaritalStatus : Member marital status
-EmploymentStatus : Member employment status
-Language : Preferred language
-Ethnicity : Member ethnicity
-MedicareID : Medicare Identifier (if any)
-MedicaidID : Medicaid Identifier (if any)
-OtherInsurance : Indicates presence of other insurance
-DisabilityStatus : Indicates disability status
-"""
+# Paths for uploaded context files
+DATA_DICT_UPLOAD_PATH = os.path.join(app.config['UPLOAD_FOLDER'], 'context', 'data_dict.txt')
+DOMAIN_MODEL_UPLOAD_PATH = os.path.join(app.config['UPLOAD_FOLDER'], 'domain', 'domain_model.txt')
+
+# Helper to read uploaded context files (or fallback to default)
+def get_context_file(path, default):
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            return f.read()
+    except Exception:
+        return default
+
+# Default context (used if no file uploaded)
+DEFAULT_DOMAIN_MODEL = "Eligibility Domain Model: ..."
+DEFAULT_DATA_DICTIONARY = "Source Data Dictionary: ..."
+@app.route('/upload_data_dict', methods=['POST'])
+def upload_data_dict():
+    if 'data_dict_file' not in request.files:
+        return jsonify({'error': 'No file selected'}), 400
+    file = request.files['data_dict_file']
+    if file.filename == '':
+        return jsonify({'error': 'No file selected'}), 400
+    file.save(DATA_DICT_UPLOAD_PATH)
+    return jsonify({'success': True, 'message': 'Data dictionary uploaded successfully.'})
+
+@app.route('/upload_domain_model', methods=['POST'])
+def upload_domain_model():
+    if 'domain_model_file' not in request.files:
+        return jsonify({'error': 'No file selected'}), 400
+    file = request.files['domain_model_file']
+    if file.filename == '':
+        return jsonify({'error': 'No file selected'}), 400
+    file.save(DOMAIN_MODEL_UPLOAD_PATH)
+    return jsonify({'success': True, 'message': 'Domain model uploaded successfully.'})
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
@@ -245,9 +215,11 @@ def generate_llm_mappings_endpoint():
     import sys
     try:
         print("[INFO] Starting LLM mapping generation...", file=sys.stderr)
-        # Compose extra context for LLM prompt (domain model, data dictionary, transformation rules, SQL script request)
-        extra_context = f"""
-{DOMAIN_MODEL}\n\n{DATA_DICTIONARY}\n\nTransformation Rules:\n{TRANSFORMATION_RULES}\n\nINSTRUCTIONS:\nReturn ONLY a single flat JSON dictionary where each key is a stage field from the list below, and each value is the mapping expression for that field.\nDo NOT include any nested keys, reasoning, SQL scripts, or extra information.\nDo NOT include a 'mappings' key, just the dictionary itself.\nIf a mapping is not possible, use an empty string as the value.\nStage fields: {', '.join(STAGE_FIELDS)}\n"""
+    # Use uploaded files for context if present
+    domain_model = get_context_file(DOMAIN_MODEL_UPLOAD_PATH, DEFAULT_DOMAIN_MODEL)
+    data_dict = get_context_file(DATA_DICT_UPLOAD_PATH, DEFAULT_DATA_DICTIONARY)
+    extra_context = f"""
+{domain_model}\n\n{data_dict}\n\nTransformation Rules:\n{TRANSFORMATION_RULES}\n\nINSTRUCTIONS:\nReturn ONLY a single flat JSON dictionary where each key is a stage field from the list below, and each value is the mapping expression for that field.\nDo NOT include any nested keys, reasoning, SQL scripts, or extra information.\nDo NOT include a 'mappings' key, just the dictionary itself.\nIf a mapping is not possible, use an empty string as the value.\nStage fields: {', '.join(STAGE_FIELDS)}\n"""
         result = llm_generate_mappings(
             current_source_headers,
             current_source_data[:10],  # Top 10 rows
