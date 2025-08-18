@@ -361,6 +361,9 @@ Stage fields: {', '.join(STAGE_FIELDS)}
             # Normalize mapping keys to match STAGE_FIELDS (case-insensitive, strip)
             stage_fields_norm = {sf.lower().strip(): sf for sf in STAGE_FIELDS}
             filtered = {}
+            # Collect employer group subfields if present as top-level keys
+            employer_group_keys = ['groupName', 'groupStatus', 'addressLine1', 'addressLine2', 'zip']
+            employer_group_obj = {}
             for k, v in llm_mappings.items():
                 k_norm = k.lower().strip()
                 if k_norm == 'employergroups':
@@ -373,10 +376,15 @@ Stage fields: {', '.join(STAGE_FIELDS)}
                         except Exception:
                             group_obj = {}
                     if isinstance(group_obj, dict):
-                        allowed_keys = ['groupName', 'groupStatus', 'addressLine1', 'addressLine2', 'zip']
+                        allowed_keys = employer_group_keys
                         filtered['employerGroups'] = {subk: group_obj.get(subk, '') for subk in allowed_keys}
+                elif k in employer_group_keys:
+                    employer_group_obj[k] = v.strip().strip('"') if isinstance(v, str) else ''
                 elif k_norm in stage_fields_norm and isinstance(v, str):
                     filtered[stage_fields_norm[k_norm]] = v.strip().strip('"')
+            # If any employer group subfields were found at top level, add them as employerGroups
+            if employer_group_obj and 'employerGroups' not in filtered:
+                filtered['employerGroups'] = {subk: employer_group_obj.get(subk, '') for subk in employer_group_keys}
             import sys
             print(f"[DEBUG] Filtered mappings to update: {filtered}", file=sys.stderr)
             print("[DEBUG] Mapping fields returned to UI:", list(filtered.keys()), file=sys.stderr)
