@@ -364,6 +364,7 @@ Stage fields: {', '.join(STAGE_FIELDS)}
             # Collect employer group subfields if present as top-level keys
             employer_group_keys = ['groupName', 'groupStatus', 'addressLine1', 'addressLine2', 'zip']
             employer_group_obj = {}
+            employer_groups_valid = False
             for k, v in llm_mappings.items():
                 k_norm = k.lower().strip()
                 if k_norm == 'employergroups':
@@ -374,16 +375,17 @@ Stage fields: {', '.join(STAGE_FIELDS)}
                             import json as _json
                             group_obj = _json.loads(group_obj)
                         except Exception:
-                            group_obj = {}
+                            group_obj = None
                     if isinstance(group_obj, dict):
                         allowed_keys = employer_group_keys
                         filtered['employerGroups'] = {subk: group_obj.get(subk, '') for subk in allowed_keys}
+                        employer_groups_valid = True
                 elif k in employer_group_keys:
                     employer_group_obj[k] = v.strip().strip('"') if isinstance(v, str) else ''
                 elif k_norm in stage_fields_norm and isinstance(v, str):
                     filtered[stage_fields_norm[k_norm]] = v.strip().strip('"')
-            # If any employer group subfields were found at top level, add them as employerGroups
-            if employer_group_obj and 'employerGroups' not in filtered:
+            # Always use subfields from top-level keys if present and not already set
+            if employer_group_obj:
                 filtered['employerGroups'] = {subk: employer_group_obj.get(subk, '') for subk in employer_group_keys}
             import sys
             print(f"[DEBUG] Filtered mappings to update: {filtered}", file=sys.stderr)
