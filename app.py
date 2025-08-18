@@ -246,7 +246,7 @@ def generate_llm_mappings_endpoint():
     try:
         print("[INFO] Starting LLM mapping generation...", file=sys.stderr)
         # Compose extra context for LLM prompt (domain model, data dictionary, transformation rules, SQL script request)
-    extra_context = f"""
+        extra_context = f"""
 {DOMAIN_MODEL}\n\n{DATA_DICTIONARY}\n\nTransformation Rules:\n{TRANSFORMATION_RULES}\n\nINSTRUCTIONS:\nReturn ONLY a single flat JSON dictionary where each key is a stage field from the list below, and each value is the mapping expression for that field.\nDo NOT include any nested keys, reasoning, SQL scripts, or extra information.\nDo NOT include a 'mappings' key, just the dictionary itself.\nIf a mapping is not possible, use an empty string as the value.\nStage fields: {', '.join(STAGE_FIELDS)}\n"""
         result = llm_generate_mappings(
             current_source_headers,
