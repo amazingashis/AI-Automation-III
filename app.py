@@ -11,9 +11,7 @@ load_dotenv()
 
 
 
-# Paths for uploaded context files
-DATA_DICT_UPLOAD_PATH = os.path.join(app.config['UPLOAD_FOLDER'], 'context', 'data_dict.txt')
-DOMAIN_MODEL_UPLOAD_PATH = os.path.join(app.config['UPLOAD_FOLDER'], 'domain', 'domain_model.txt')
+
 
 # Helper to read uploaded context files (or fallback to default)
 def get_context_file(path, default):
@@ -46,9 +44,10 @@ def upload_domain_model():
     file.save(DOMAIN_MODEL_UPLOAD_PATH)
     return jsonify({'success': True, 'message': 'Domain model uploaded successfully.'})
 
-app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'uploads'
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+
+# Paths for uploaded context files (must be after app is defined)
+DATA_DICT_UPLOAD_PATH = os.path.join(app.config['UPLOAD_FOLDER'], 'context', 'data_dict.txt')
+DOMAIN_MODEL_UPLOAD_PATH = os.path.join(app.config['UPLOAD_FOLDER'], 'domain', 'domain_model.txt')
 
 # Ensure upload directory exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
