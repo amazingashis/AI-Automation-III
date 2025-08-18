@@ -47,7 +47,7 @@ class LLMMapper:
         }
     
     def generate_mappings(self, source_headers: List[str], source_data_sample: List[List[str]], 
-                         stage_fields: List[str]) -> Dict[str, Any]:
+                         stage_fields: List[str], extra_context: str = None) -> Dict[str, Any]:
         """
         Generate field mappings using LLM analysis via Databricks API.
         Args:
@@ -58,8 +58,10 @@ class LLMMapper:
             Dictionary containing success status, mappings, and reasoning
         """
         try:
-            # Create the prompt for the LLM
+            # Create the prompt for the LLM, prepend extra_context if provided
             prompt = self._create_mapping_prompt(source_headers, source_data_sample, stage_fields)
+            if extra_context:
+                prompt = f"{extra_context}\n\n{prompt}"
             # Call Databricks API
             api_response = self._call_databricks_api(prompt)
             # Parse the response to extract mappings
@@ -275,7 +277,7 @@ Important: Only include mappings where you can confidently match source fields t
 
 # Convenience function for simple usage
 def generate_mappings(source_headers: List[str], source_data_sample: List[List[str]], 
-                     stage_fields: List[str], _databricks_url: str = None, _model: str = None, token: str = None) -> Dict[str, Any]:
+                     stage_fields: List[str], _databricks_url: str = None, _model: str = None, token: str = None, extra_context: str = None) -> Dict[str, Any]:
     """
     Generate mappings using Databricks LLM. All config is hardcoded for Databricks.
     Args:
@@ -288,4 +290,4 @@ def generate_mappings(source_headers: List[str], source_data_sample: List[List[s
     """
     config = LLMMapperConfig(token=token)
     mapper = LLMMapper(config)
-    return mapper.generate_mappings(source_headers, source_data_sample, stage_fields)
+    return mapper.generate_mappings(source_headers, source_data_sample, stage_fields, extra_context=extra_context)
