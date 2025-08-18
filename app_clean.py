@@ -29,7 +29,6 @@ STAGE_FIELDS = [
     'lob',
     'memberMonth',
     'dualEligibilityInd',
-    'employerGroup',
     'coverageDesc',
     'Employer Group'
 ]
