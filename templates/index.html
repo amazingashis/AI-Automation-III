@@ -330,6 +330,11 @@
                         currentMappings = { ...currentMappings, ...data.mappings };
                     }
                     loadMappingsIntoTable();
+                    // Show SQL scripts in a separate box if present
+                    let sqlScriptsHtml = '';
+                    if (data.llm_output && data.llm_output.sql_scripts) {
+                        sqlScriptsHtml = `<div class="card mt-3"><div class="card-header"><strong>SQL Scripts (Databricks)</strong></div><div class="card-body"><pre style='font-size:12px;'>${typeof data.llm_output.sql_scripts === 'object' ? Object.entries(data.llm_output.sql_scripts).map(([k,v]) => `${k}:\n${v}`).join('\n\n') : data.llm_output.sql_scripts}</pre></div></div>`;
+                    }
                     // Show success message with reasoning and print full LLM output
                     statusDiv.innerHTML = `
                         <div class="alert alert-success">
@@ -338,6 +343,7 @@
                             ${data.raw_response ? `<br><br><details><summary>View Full Response</summary><pre>${data.raw_response}</pre></details>` : ''}
                             <br><br><details><summary>LLM Output (Full)</summary><pre>${JSON.stringify(data.llm_output, null, 2)}</pre></details>
                         </div>
+                        ${sqlScriptsHtml}
                     `;
                 } else {
                     statusDiv.innerHTML = `
