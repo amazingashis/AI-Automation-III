@@ -1,0 +1,108 @@
+# Data Mapping Web Application for Eligibility Data
+
+This web application provides a user-friendly interface for mapping source data fields to stage fields with custom transformation functions.
+
+## Features
+
+- **Source File Upload**: Upload CSV files and automatically read headers
+- **Stage Field Mapping**: Map source fields to predefined eligibility stage fields
+- **Custom Functions**: Apply transformation functions like Upper, Trim, Lower, etc.
+- **Interactive Interface**: 
+  - Click source headers to insert field names
+  - Click transformation rules to insert functions
+  - Preview transformations with sample data
+- **Mapping Management**: Save, view, edit, and export mappings
+
+## Stage Fields (Eligibility Data Type)
+
+The application includes predefined stage fields for eligibility data:
+- member_id, member_first_name, member_last_name
+- member_ssn, member_dob, member_gender
+- member_address, member_city, member_state, member_zip
+- member_phone, member_email
+- enrollment_start_date, enrollment_end_date
+- coverage_type, coverage_status
+- plan_id, plan_name, group_id, group_name
+
+## Transformation Functions
+
+Available transformation rules:
+- **Trim**: Remove leading/trailing whitespace
+- **Upper**: Convert to uppercase
+- **Lower**: Convert to lowercase  
+- **Title**: Convert to title case
+- **Left/Right**: Extract characters from left/right
+- **Substring**: Extract substring
+- **Replace**: Replace text
+- **Concatenate**: Combine fields
+- **DateFormat**: Format dates
+- **IsNull/NotNull**: Check for null values
+- **Length**: Get field length
+- **Contains**: Check if contains substring
+
+## Setup and Installation
+
+1. Install Python dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+2. Run the application:
+```bash
+python app.py
+```
+
+3. Open your browser and navigate to `http://localhost:5000`
+
+## Usage
+
+1. **Upload Source File**: 
+   - Click "Choose File" and select a CSV file
+   - Click "Upload and Read Headers" to load the source headers
+
+2. **Create Mappings**:
+   - Select a stage field from the dropdown
+   - Build your mapping expression using:
+     - Source field names (click from the headers sidebar)
+     - Transformation functions (click from the rules sidebar)
+     - Manual typing for custom expressions
+   - Preview your transformation with sample data
+   - Save the mapping
+
+3. **Example Mapping**:
+   ```
+   Stage Field: member_first_name
+   Mapping: Upper(Trim(FirstName))
+   ```
+
+4. **Export Mappings**: 
+   - Click "Export Mappings" to download your configuration as JSON
+
+## File Structure
+
+```
+├── app.py                 # Flask application
+├── templates/
+│   └── index.html        # Main interface template
+├── uploads/              # Directory for uploaded files
+├── requirements.txt      # Python dependencies
+└── README.md            # This file
+```
+
+## API Endpoints
+
+- `POST /upload_source_file` - Upload and process source CSV file
+- `POST /save_mapping` - Save a field mapping
+- `GET /get_mappings` - Retrieve current mappings
+- `POST /clear_mappings` - Clear all mappings
+- `POST /preview_transformation` - Preview transformation result
+- `GET /export_mappings` - Export mappings as JSON
+
+## Sample Data
+
+The application comes with a sample CSV file (`member_enrollment_file.csv`) containing member eligibility data with fields like:
+- MemberID, SSN, FirstName, LastName, Gender, DOB
+- Address, City, State, Zip, Phone, Email
+- EnrollmentStart, EnrollmentEnd, CoverageType, etc.
+
+This allows you to test the mapping functionality immediately.
