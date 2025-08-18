@@ -100,50 +100,12 @@
             </div>
         </div>
 
-        <!-- Source File Upload Section -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="row mb-4">
-                    <div class="col-12">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5><i class="fas fa-upload"></i> Upload Source File & Context</h5>
-                            </div>
-                            <div class="card-body">
-                                <form id="uploadForm" enctype="multipart/form-data">
-                                    <div class="mb-3">
-                                        <input type="file" class="form-control" id="sourceFile" name="source_file" accept=".csv" required>
-                                    </div>
-                                    <button type="submit" class="btn btn-primary">
-                                        <i class="fas fa-upload"></i> Upload and Read Headers
-                                    </button>
-                                    <button type="button" class="btn btn-success ms-2" id="generateLLMBtn" disabled>
-                                        <i class="fas fa-magic"></i> Generate Mappings with AI
-                                    </button>
-                                </form>
-                                <hr>
-                                <form id="uploadDataDictForm" enctype="multipart/form-data" class="mb-2">
-                                    <label for="dataDictFile" class="form-label">Upload Data Dictionary (txt, csv, xlsx):</label>
-                                    <input type="file" class="form-control" id="dataDictFile" name="data_dict_file" accept=".txt,.csv,.xlsx">
-                                    <button type="submit" class="btn btn-outline-primary btn-sm mt-2">Upload Data Dictionary</button>
-                                    <span id="dataDictStatus" class="ms-2"></span>
-                                </form>
-                                <form id="uploadDomainModelForm" enctype="multipart/form-data">
-                                    <label for="domainModelFile" class="form-label">Upload Domain Model (txt, csv, xlsx):</label>
-                                    <input type="file" class="form-control" id="domainModelFile" name="domain_model_file" accept=".txt,.csv,.xlsx">
-                                    <button type="submit" class="btn btn-outline-primary btn-sm mt-2">Upload Domain Model</button>
-                                    <span id="domainModelStatus" class="ms-2"></span>
-                                </form>
-                                <div id="uploadStatus" class="mt-3"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    <!-- Main Content Row -->
+    <div class="row">
             <!-- Main Mapping Interface -->
             <div class="col-lg-8">
                 <div class="mapping-container">
                     <h4><i class="fas fa-cogs"></i> Data Mapping Interface</h4>
-                    
                     <!-- Stage Fields Mapping Table -->
                     <div class="table-responsive">
                         <table class="table table-bordered table-hover">
@@ -191,7 +153,6 @@
                             </tbody>
                         </table>
                     </div>
-
                     <!-- Bulk Actions -->
                     <div class="mt-3">
                         <button type="button" class="btn btn-primary" onclick="saveAllMappings()">
@@ -212,6 +173,43 @@
 
             <!-- Sidebar with Headers and Rules -->
             <div class="col-lg-4">
+                <!-- Upload Forms & Source File Names -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h6><i class="fas fa-upload"></i> Upload Files</h6>
+                    </div>
+                    <div class="card-body sidebar">
+                        <form id="uploadForm" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <input type="file" class="form-control" id="sourceFile" name="source_file" accept=".csv" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                <i class="fas fa-upload"></i> Upload Source File
+                            </button>
+                            <button type="button" class="btn btn-success btn-sm ms-2" id="generateLLMBtn" disabled>
+                                <i class="fas fa-magic"></i> Generate Mappings
+                            </button>
+                        </form>
+                        <form id="uploadDataDictForm" enctype="multipart/form-data" class="mt-3">
+                            <label for="dataDictFile" class="form-label">Data Dictionary (txt, csv, xlsx):</label>
+                            <input type="file" class="form-control" id="dataDictFile" name="data_dict_file" accept=".txt,.csv,.xlsx">
+                            <button type="submit" class="btn btn-outline-primary btn-sm mt-2">Upload Data Dictionary</button>
+                            <span id="dataDictStatus" class="ms-2"></span>
+                        </form>
+                        <form id="uploadDomainModelForm" enctype="multipart/form-data" class="mt-3">
+                            <label for="domainModelFile" class="form-label">Domain Model (txt, csv, xlsx):</label>
+                            <input type="file" class="form-control" id="domainModelFile" name="domain_model_file" accept=".txt,.csv,.xlsx">
+                            <button type="submit" class="btn btn-outline-primary btn-sm mt-2">Upload Domain Model</button>
+                            <span id="domainModelStatus" class="ms-2"></span>
+                        </form>
+                        <div id="uploadStatus" class="mt-3"></div>
+                        <hr>
+                        <div>
+                            <strong>Uploaded Source Files:</strong>
+                            <ul id="sourceFileList" class="mb-2"></ul>
+                        </div>
+                    </div>
+                </div>
                 <!-- Source Headers -->
                 <div class="card mb-3">
                     <div class="card-header">
@@ -221,7 +219,6 @@
                         <em class="text-muted">Upload a source file to see headers</em>
                     </div>
                 </div>
-
                 <!-- Transformation Rules -->
                 <div class="card mb-3">
                     <div class="card-header">
@@ -236,7 +233,6 @@
                         {% endfor %}
                     </div>
                 </div>
-
                 <!-- Function Helper -->
                 <div class="function-helper">
                     <h6><i class="fas fa-info-circle"></i> Function Helper</h6>
