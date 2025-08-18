@@ -1,7 +1,7 @@
 """
 LLM Mapping Generator Module
 
-This module handles the integration with LMStudio to generate field mappings
+This module handles the integration with Databricks API to generate field mappings
 using AI analysis of source data and target stage fields.
 """
 
@@ -49,54 +49,42 @@ class LLMMapper:
     def generate_mappings(self, source_headers: List[str], source_data_sample: List[List[str]], 
                          stage_fields: List[str]) -> Dict[str, Any]:
         """
-        Generate field mappings using LLM analysis.
-        
+        Generate field mappings using LLM analysis via Databricks API.
         Args:
             source_headers: List of source file column headers
             source_data_sample: Sample rows from source data (top 10 rows)
             stage_fields: List of target stage field names
-            
         Returns:
             Dictionary containing success status, mappings, and reasoning
         """
         try:
             # Create the prompt for the LLM
             prompt = self._create_mapping_prompt(source_headers, source_data_sample, stage_fields)
-            
             # Call Databricks API
             api_response = self._call_databricks_api(prompt)
-            
             # Parse the response to extract mappings
             mappings = self._parse_llm_response(api_response)
-            
             # Extract reasoning if available
             reasoning = self._extract_reasoning(api_response)
-            
             return {
                 'success': True,
                 'mappings': mappings,
                 'reasoning': reasoning,
                 'raw_response': api_response.get('choices', [{}])[0].get('message', {}).get('content', '')
             }
-            
-        except requests.exceptions.ConnectionError as e:
+        except openai.OpenAIError as e:
+            # Handle OpenAI/Databricks API errors
+            error_message = str(e)
+            if '403' in error_message or 'blocked by Databricks IP ACL' in error_message:
+                return {
+                    'success': False,
+                    'error': 'Access denied: Your IP address is blocked by Databricks IP ACL. Please contact your Databricks admin to allow your IP or use an allowed network.',
+                    'mappings': {},
+                    'reasoning': ''
+                }
             return {
                 'success': False,
-                'error': f'Cannot connect to LMStudio at {self.config.base_url}. Please ensure LMStudio is running and accessible. Details: {str(e)}',
-                'mappings': {},
-                'reasoning': ''
-            }
-        except requests.exceptions.Timeout as e:
-            return {
-                'success': False,
-                'error': f'LMStudio request timed out after {self.config.timeout} seconds. Please try again. Details: {str(e)}',
-                'mappings': {},
-                'reasoning': ''
-            }
-        except requests.exceptions.RequestException as e:
-            return {
-                'success': False,
-                'error': f'HTTP request failed. Please check LMStudio configuration. Details: {str(e)}',
+                'error': f'Databricks API error: {error_message}',
                 'mappings': {},
                 'reasoning': ''
             }
@@ -221,7 +209,7 @@ Important: Only include mappings where you can confidently match source fields t
         return {"choices": [{"message": {"content": response.choices[0].message.content}}]}
     
     def _parse_llm_response(self, api_response: Dict[str, Any]) -> Dict[str, str]:
-        """Parse LMStudio API response to extract mappings."""
+        """Parse Databricks API response to extract mappings."""
         
         try:
             # Extract content from API response
@@ -278,7 +266,7 @@ Important: Only include mappings where you can confidently match source fields t
             return 'No reasoning available'
     
     def update_config(self, base_url: str = None, model: str = None):
-        """Update LMStudio configuration."""
+        """Update Databricks configuration."""
         if base_url:
             self.config.base_url = base_url
         if model:

@@ -5,6 +5,9 @@ import json
 from werkzeug.utils import secure_filename
 import re
 from llm_mapper import generate_mappings as llm_generate_mappings
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
@@ -57,13 +60,10 @@ current_source_headers = []
 current_mappings = {}
 current_source_data = []
 
-# LMStudio configuration
-import openai
-
 # Databricks API configuration
+import openai
 DATABRICKS_BASE_URL = "https://dbc-3735add4-1cb6.cloud.databricks.com/serving-endpoints"
 DATABRICKS_MODEL = "databricks-claude-sonnet-4"
-
 # Get Databricks token from environment variable
 DATABRICKS_TOKEN = os.environ.get('DATABRICKS_TOKEN')
 
@@ -158,21 +158,17 @@ def preview_transformation():
 
 @app.route('/generate_llm_mappings', methods=['POST'])
 def generate_llm_mappings_endpoint():
-    """API endpoint to generate mappings using LLM."""
-    
+    """API endpoint to generate mappings using LLM via Databricks API."""
     global current_source_headers, current_source_data
-    
     if not current_source_headers:
         return jsonify({'error': 'No source file uploaded'}), 400
-    
     try:
         # Get Databricks configuration from request if provided
         data = request.get_json() or {}
         databricks_url = data.get('databricks_url', DATABRICKS_BASE_URL)
         model = data.get('model', DATABRICKS_MODEL)
         token = DATABRICKS_TOKEN
-
-        # Generate mappings using the new LLM mapper module (now Databricks)
+        # Generate mappings using the LLM mapper module (Databricks)
         result = llm_generate_mappings(
             current_source_headers,
             current_source_data[:10],  # Top 10 rows
@@ -181,16 +177,17 @@ def generate_llm_mappings_endpoint():
             model,
             token
         )
-        
         if result['success']:
             # Update current mappings with LLM suggestions
             global current_mappings
             current_mappings.update(result['mappings'])
-            
         return jsonify(result)
-        
     except Exception as e:
-        return jsonify({'error': f'Failed to generate LLM mappings: {str(e)}'}), 500
+        # If the error is about Databricks IP ACL, provide a clear message
+        error_msg = str(e)
+        if 'blocked by Databricks IP ACL' in error_msg or '403' in error_msg:
+            return jsonify({'error': 'Access denied: Your IP address is blocked by Databricks IP ACL. Please contact your Databricks admin to allow your IP or use an allowed network.'}), 403
+        return jsonify({'error': f'Failed to generate LLM mappings: {error_msg}'}), 500
 
 def validate_mapping_expression(expression):
     """Basic validation for mapping expressions"""
