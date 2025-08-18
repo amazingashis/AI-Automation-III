@@ -270,6 +270,7 @@ def generate_llm_mappings_endpoint():
                     filtered[stage_fields_norm[k_norm]] = v.strip().strip('"')
             import sys
             print(f"[DEBUG] Filtered mappings to update: {filtered}", file=sys.stderr)
+            print("[DEBUG] Mapping fields returned to UI:", list(filtered.keys()), file=sys.stderr)
             global current_mappings
             current_mappings.update(filtered)
             # Only return mappings for UI update
