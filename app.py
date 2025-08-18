@@ -246,8 +246,8 @@ def generate_llm_mappings_endpoint():
     try:
         print("[INFO] Starting LLM mapping generation...", file=sys.stderr)
         # Compose extra context for LLM prompt (domain model, data dictionary, transformation rules, SQL script request)
-        extra_context = f"""
-{DOMAIN_MODEL}\n\n{DATA_DICTIONARY}\n\nTransformation Rules:\n{TRANSFORMATION_RULES}\n\nFor each transformation rule, also generate a sample SQL script that demonstrates how to implement that transformation in Databricks SQL (ANSI SQL compatible with Databricks).\n\nPlease provide the SQL mapping expressions for each stage field using the transformation rules, based on the source data sample. Respond in JSON with 'mappings', 'reasoning', and 'sql_scripts' (where 'sql_scripts' is a dictionary with the transformation rule as the key and the SQL script as the value, and all SQL must be valid in Databricks SQL).\n"""
+    extra_context = f"""
+{DOMAIN_MODEL}\n\n{DATA_DICTIONARY}\n\nTransformation Rules:\n{TRANSFORMATION_RULES}\n\nINSTRUCTIONS:\nReturn ONLY a single flat JSON dictionary where each key is a stage field from the list below, and each value is the mapping expression for that field.\nDo NOT include any nested keys, reasoning, SQL scripts, or extra information.\nDo NOT include a 'mappings' key, just the dictionary itself.\nIf a mapping is not possible, use an empty string as the value.\nStage fields: {', '.join(STAGE_FIELDS)}\n"""
         result = llm_generate_mappings(
             current_source_headers,
             current_source_data[:10],  # Top 10 rows
@@ -258,29 +258,22 @@ def generate_llm_mappings_endpoint():
         print("[INFO] LLM response received:", file=sys.stderr)
         print(result, file=sys.stderr)
         if result['success']:
-            # Handle nested 'mappings' key if present (as in new LLM output)
+            # Expect a flat dictionary of mappings only
             mappings = result.get('mappings')
-            if isinstance(mappings, dict) and 'mappings' in mappings:
-                # If LLM returned a nested 'mappings' dict, use it
-                llm_mappings = mappings.get('mappings', {})
-                reasoning = mappings.get('reasoning', result.get('reasoning', ''))
-            else:
-                llm_mappings = mappings if isinstance(mappings, dict) else {}
-                reasoning = result.get('reasoning', '')
+            llm_mappings = mappings if isinstance(mappings, dict) else {}
+            # Normalize mapping keys to match STAGE_FIELDS (case-insensitive, strip)
+            stage_fields_norm = {sf.lower().strip(): sf for sf in STAGE_FIELDS}
+            filtered = {}
+            for k, v in llm_mappings.items():
+                k_norm = k.lower().strip()
+                if k_norm in stage_fields_norm and isinstance(v, str):
+                    filtered[stage_fields_norm[k_norm]] = v.strip().strip('"')
+            import sys
+            print(f"[DEBUG] Filtered mappings to update: {filtered}", file=sys.stderr)
             global current_mappings
-            if isinstance(llm_mappings, dict):
-                # Normalize mapping keys to match STAGE_FIELDS (case-insensitive, strip)
-                stage_fields_norm = {sf.lower().strip(): sf for sf in STAGE_FIELDS}
-                filtered = {}
-                for k, v in llm_mappings.items():
-                    k_norm = k.lower().strip()
-                    if k_norm in stage_fields_norm and isinstance(v, str) and v.strip() and v.strip() != '{':
-                        filtered[stage_fields_norm[k_norm]] = v.strip().strip('"')
-                import sys
-                print(f"[DEBUG] Filtered mappings to update: {filtered}", file=sys.stderr)
-                current_mappings.update(filtered)
-            # Print the full LLM output in the web app response
-            return jsonify({'success': True, 'processing': False, 'mappings': llm_mappings, 'reasoning': reasoning, 'raw_response': result.get('raw_response', ''), 'llm_output': result})
+            current_mappings.update(filtered)
+            # Only return mappings for UI update
+            return jsonify({'success': True, 'processing': False, 'mappings': filtered})
         return jsonify(result)
     except Exception as e:
         # If the error is about Databricks IP ACL, provide a clear message
