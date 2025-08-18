@@ -157,7 +157,11 @@ STAGE_FIELDS = [
     'memberMonth',
     'dualEligibilityInd',
     'coverageDesc',
-    'Employer Group'
+    'Employer Group: groupName',
+    'Employer Group: groupStatus',
+    'Employer Group: addressLine1',
+    'Employer Group: addressLine2',
+    'Employer Group: zip'
 ]
 
 # Predefined transformation rules/functions

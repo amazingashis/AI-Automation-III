@@ -12,7 +12,12 @@ STAGE_FIELDS = [
     'memberFirst', 'memberLast', 'mbrDOB', 'mbrGender', 'ssn', 'memberID',
     'enrollmentStatus', 'enrollmentEffectiveDate', 'terminationDate', 'planID',
     'product', 'lob', 'memberMonth', 'dualEligibilityInd',
-    'coverageDesc', 'Employer Group'
+    'coverageDesc',
+    'Employer Group: groupName',
+    'Employer Group: groupStatus',
+    'Employer Group: addressLine1',
+    'Employer Group: addressLine2',
+    'Employer Group: zip'
 ]
 
 
