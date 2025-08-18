@@ -42,6 +42,8 @@ def upload_data_dict():
     file = request.files['data_dict_file']
     if file.filename == '':
         return jsonify({'error': 'No file selected'}), 400
+    # Ensure parent directory exists
+    os.makedirs(os.path.dirname(DATA_DICT_UPLOAD_PATH), exist_ok=True)
     file.save(DATA_DICT_UPLOAD_PATH)
     return jsonify({'success': True, 'message': 'Data dictionary uploaded successfully.'})
 
@@ -52,6 +54,8 @@ def upload_domain_model():
     file = request.files['domain_model_file']
     if file.filename == '':
         return jsonify({'error': 'No file selected'}), 400
+    # Ensure parent directory exists
+    os.makedirs(os.path.dirname(DOMAIN_MODEL_UPLOAD_PATH), exist_ok=True)
     file.save(DOMAIN_MODEL_UPLOAD_PATH)
     return jsonify({'success': True, 'message': 'Domain model uploaded successfully.'})
 
