@@ -1,0 +1,14 @@
+<!doctype html>
+<title>LLM SQL Script Generator</title>
+<h2>Upload Domain Model, Data Dictionary, and Source File</h2>
+<form method=post enctype=multipart/form-data>
+  Domain Model: <input type=file name=domain_model><br><br>
+  Data Dictionary: <input type=file name=data_dict><br><br>
+  Source File: <input type=file name=source_file><br><br>
+  <input type=submit value=Upload>
+</form>
+{% if sql_script %}
+  <h3>Generated SQL Script:</h3>
+  <pre>{{ sql_script }}</pre>
+  <a href="/download/{{ script_filename }}">Download Script</a>
+{% endif %}
