@@ -138,23 +138,33 @@ def generate_sql_scripts(
     data_dict_df = load_data_dict(data_dict_path)
     mappings = load_mappings(mappings_path)
 
-    create_table_sql = generate_create_table(domain_df, output_table)
-    transform_select_sql = generate_transform_select(mappings, domain_df, data_dict_df, source_table)
-    unload_sql = generate_unload(output_table, unload_path)
+    # Build LLM prompt
+    prompt = build_llm_sql_prompt(source_table, mappings, domain_model_path, data_dict_path)
+    print("[DEBUG] LLM Prompt for SQL Generation:\n", prompt)
 
-    # Insert/CTAS statement
-    insert_sql = f"INSERT INTO {output_table}\n{transform_select_sql}"
-
-    return [
-        '-- 1. Create Domain Model Table',
-        create_table_sql,
-        '',
-        '-- 2. Transform and Map Source Data',
-        insert_sql,
-        '',
-        '-- 3. Unload/Export Data',
-        unload_sql
-    ]
+    # Call LLM (replace with your LLM call, e.g., Databricks, LMStudio, etc.)
+    try:
+        from llm_mapper import call_llm_for_sql
+        llm_response = call_llm_for_sql(prompt)
+        print("[DEBUG] LLM Response for SQL Generation:\n", llm_response)
+        # Return LLM response as a single SQL chunk for now
+        return [llm_response]
+    except ImportError:
+        print("[WARN] llm_mapper.call_llm_for_sql not implemented, falling back to legacy SQL generation.")
+        create_table_sql = generate_create_table(domain_df, output_table)
+        transform_select_sql = generate_transform_select(mappings, domain_df, data_dict_df, source_table)
+        unload_sql = generate_unload(output_table, unload_path)
+        # Insert/CTAS statement (legacy)
+        return [
+            '-- 1. Create Domain Model Table',
+            create_table_sql,
+            '',
+            '-- 2. Transform and Map Source Data',
+            transform_select_sql,
+            '',
+            '-- 3. Unload/Export Data',
+            unload_sql
+        ]
 
 # Example usage (for testing):
 # sql_chunks = generate_sql_scripts(
