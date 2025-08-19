@@ -1,3 +1,33 @@
+# Convenience function for SQL script generation via Databricks LLM
+def call_llm_for_sql(prompt: str, token: str = None, base_url: str = None, model: str = None) -> str:
+    """
+    Call Databricks LLM endpoint to generate SQL scripts from a prompt.
+    Args:
+        prompt: The full prompt string for the LLM
+        token: Databricks API token (optional, will use env if not provided)
+        base_url: Databricks endpoint base URL (optional)
+        model: Model name (optional)
+    Returns:
+        The LLM's response as a string (SQL code)
+    """
+    import os
+    import openai
+    token = token or os.environ.get('DATABRICKS_TOKEN')
+    base_url = base_url or "https://dbc-3735add4-1cb6.cloud.databricks.com/serving-endpoints"
+    model = model or "databricks-claude-sonnet-4"
+    if not token:
+        raise ValueError("Databricks API token is required.")
+    client = openai.OpenAI(api_key=token, base_url=base_url)
+    response = client.chat.completions.create(
+        model=model,
+        messages=[
+            {"role": "system", "content": "You are a US healthcare data expert. Only output valid SQL code and comments, no explanations."},
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0.1,
+        max_tokens=2000
+    )
+    return response.choices[0].message.content.strip()
 """
 LLM Mapping Generator Module
 
