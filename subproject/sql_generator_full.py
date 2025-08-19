@@ -147,9 +147,9 @@ def generate_unload(table_name: str, output_path: str = '/tmp/unload/') -> str:
 
 def generate_sql_scripts(
     source_table: str,
-    mappings_path: str,
-    domain_model_path: str,
     data_dict_path: str,
+    domain_model_path: str,
+    scripts_folder: str,
     output_table: str = 'output_Table',
     unload_path: str = '/tmp/unload/'
 ) -> List[str]:
@@ -159,35 +159,26 @@ def generate_sql_scripts(
     """
     domain_df = load_domain_model(domain_model_path)
     data_dict_df = load_data_dict(data_dict_path)
-    mappings = load_mappings(mappings_path)
-
-    # Build LLM prompt
-    prompt = build_llm_sql_prompt(source_table, mappings, domain_model_path, data_dict_path)
-    print("[DEBUG] LLM Prompt for SQL Generation:\n", prompt)
-
-    # Call LLM (replace with your LLM call, e.g., Databricks, LMStudio, etc.)
-    try:
-        from llm_mapper import call_llm_for_sql
-        llm_response = call_llm_for_sql(prompt)
-        print("[DEBUG] LLM Response for SQL Generation:\n", llm_response)
-        # Return LLM response as a single SQL chunk for now
-        return [llm_response]
-    except ImportError:
-        print("[WARN] llm_mapper.call_llm_for_sql not implemented, falling back to legacy SQL generation.")
-        create_table_sql = generate_create_table(domain_df, output_table)
-        transform_select_sql = generate_transform_select(mappings, domain_df, data_dict_df, source_table)
-        unload_sql = generate_unload(output_table, unload_path)
-        # Insert/CTAS statement (legacy)
-        return [
-            '-- 1. Create Domain Model Table',
-            create_table_sql,
-            '',
-            '-- 2. Transform and Map Source Data',
-            transform_select_sql,
-            '',
-            '-- 3. Unload/Export Data',
-            unload_sql
-        ]
+    # For this subproject, we skip mappings and just generate SQL
+    create_table_sql = generate_create_table(domain_df, output_table)
+    transform_select_sql = generate_transform_select({}, domain_df, data_dict_df, source_table)
+    unload_sql = generate_unload(output_table, unload_path)
+    sql_chunks = [
+        '-- 1. Create Domain Model Table',
+        create_table_sql,
+        '',
+        '-- 2. Transform and Map Source Data',
+        transform_select_sql,
+        '',
+        '-- 3. Unload/Export Data',
+        unload_sql
+    ]
+    # Write to output.sql in the scripts folder
+    os.makedirs(scripts_folder, exist_ok=True)
+    output_path = os.path.join(scripts_folder, 'output.sql')
+    with open(output_path, 'w', encoding='utf-8') as f:
+        f.write('\n'.join(sql_chunks))
+    return sql_chunks
 
 # Example usage (for testing):
 # sql_chunks = generate_sql_scripts(
