@@ -25,7 +25,7 @@ def call_llm_for_sql(prompt: str, token: str = None, base_url: str = None, model
             {"role": "user", "content": prompt}
         ],
         temperature=0.1,
-        max_tokens=2000
+        max_tokens=4000
     )
     return response.choices[0].message.content.strip()
 """
@@ -49,7 +49,7 @@ class LLMMapperConfig:
         self.token = token
         self.timeout = 600  # 5 minutes timeout for LLM processing
         self.temperature = 0.1
-        self.max_tokens = 2000
+        self.max_tokens = 4000
 
 
 class LLMMapper:

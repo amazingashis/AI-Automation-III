@@ -1,0 +1,23 @@
+{
+  "memberFirst": "FirstName",
+  "memberLast": "LastName",
+  "mbrDOB": "DOB",
+  "mbrGender": "Gender",
+  "ssn": "SSN",
+  "memberID": "MemberID",
+  "enrollmentStatus": "CoverageStatus",
+  "enrollmentEffectiveDate": "EnrollmentStart",
+  "terminationDate": "EnrollmentEnd",
+  "planID": "PlanID",
+  "product": "PlanName",
+  "lob": "PlanType",
+  "coverageDesc": "CoverageType",
+  "employerGroups": {
+    "groupName": "GroupName",
+    "groupStatus": "GroupStatus",
+    "addressLine1": "GroupAddress",
+    "addressLine2": "",
+    "zip": "GroupZip"
+  },
+  "null": "GroupZip"
+}

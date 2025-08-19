@@ -15,7 +15,11 @@ EnrollmentStart,Coverage enrollment start date,2024-01-01 00:00:00,Date,YYYY-MM-
 EnrollmentEnd,Coverage enrollment end date,2024-12-31 00:00:00,Date,YYYY-MM-DD
 Relationship,Relationship to subscriber,Subscriber,String,"Subscriber, Spouse, Child, etc."
 MemberSeq,Sequence in the family unit,1,String/Integer,2 digits
-CoverageType,Type of benefit coverage,Medical,String,"Medical, Dental, Vision, etc."
+CoverageType,"Coverage types_x000D_
+E : Employee only_x000D_
+F : Family_x000D_
+ECH : Employee + Children_x000D_
+ES : Employee + Spouse","E, ECH, FAM",String,Employee
 CoverageStatus,Status of the coverage,Active,String,"Active, Termed"
 GroupID,Unique identifier for employer/group,G3001,String,
 GroupName,Name of the employer/group,Capital Tech,String,

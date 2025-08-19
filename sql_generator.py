@@ -71,7 +71,7 @@ Requirements:
     4. Standardize outputs as per the data dictionary.
     5. Include any necessary SQL imports or setup statements for the target platform (e.g., Snowflake, Redshift, BigQuery, etc.).
     6. Provide an unload/export statement to export the final table.
-- Output the SQL scripts in logical, well-commented blocks.
+- Output the SQL scripts in logical, well-commented blocks. Create full separate codes for each transformation.
 - Do not include any explanations or extra text, only the SQL code and comments.
 '''
     return prompt
