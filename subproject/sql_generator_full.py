@@ -82,11 +82,11 @@ from typing import List, Dict, Any
 
 def load_domain_model(domain_model_path: str) -> pd.DataFrame:
     """Load the domain model Excel file as a DataFrame."""
-    return pd.read_excel(domain_model_path)
+    return pd.read_excel(domain_model_path, engine='openpyxl')
 
 def load_data_dict(data_dict_path: str) -> pd.DataFrame:
     """Load the data dictionary Excel file as a DataFrame."""
-    return pd.read_excel(data_dict_path)
+    return pd.read_excel(data_dict_path, engine='openpyxl')
 
 def load_mappings(mappings_path: str) -> Dict[str, Any]:
     """Load the saved mappings from JSON file."""
