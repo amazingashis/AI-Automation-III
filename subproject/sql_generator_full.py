@@ -81,12 +81,20 @@ import os
 from typing import List, Dict, Any
 
 def load_domain_model(domain_model_path: str) -> pd.DataFrame:
-    """Load the domain model Excel file as a DataFrame."""
-    return pd.read_excel(domain_model_path, engine='openpyxl')
+    """Load the domain model file as a DataFrame (supports .xlsx and .csv)."""
+    ext = os.path.splitext(domain_model_path)[1].lower()
+    if ext == '.csv':
+        return pd.read_csv(domain_model_path)
+    else:
+        return pd.read_excel(domain_model_path, engine='openpyxl')
 
 def load_data_dict(data_dict_path: str) -> pd.DataFrame:
-    """Load the data dictionary Excel file as a DataFrame."""
-    return pd.read_excel(data_dict_path, engine='openpyxl')
+    """Load the data dictionary file as a DataFrame (supports .xlsx and .csv)."""
+    ext = os.path.splitext(data_dict_path)[1].lower()
+    if ext == '.csv':
+        return pd.read_csv(data_dict_path)
+    else:
+        return pd.read_excel(data_dict_path, engine='openpyxl')
 
 def load_mappings(mappings_path: str) -> Dict[str, Any]:
     """Load the saved mappings from JSON file."""
