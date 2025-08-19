@@ -62,6 +62,8 @@ def upload_files():
             domain_model_path = files['domain_model']
             data_dict_path = files['data_dict']
             source_file_path = files['source_file']
+            # Ensure scripts folder exists
+            os.makedirs(SCRIPTS_FOLDER, exist_ok=True)
             # Generate SQL script directly
             generate_sql_scripts(domain_model_path, data_dict_path, source_file_path, SCRIPTS_FOLDER)
             # Find the generated script (assume .sql file)
