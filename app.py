@@ -1,3 +1,32 @@
+# --- SQL Script Generation Endpoint ---
+from sql_generator import generate_sql_scripts
+
+# ...existing code...
+
+# Place this after the Flask app is created
+
+def register_sql_scripts_endpoint(app):
+    @app.route('/generate_sql_scripts', methods=['POST'])
+    def generate_sql_scripts_endpoint():
+        try:
+            data = request.get_json() or {}
+            source_table = data.get('source_table', 'silver.elig')
+            output_table = data.get('output_table', 'output_Table')
+            # Use the mappings.json file and default domain/data dict paths
+            mappings_path = 'mappings.json'
+            domain_model_path = 'domain_model/Domain Model Eligibility.xlsx'
+            data_dict_path = 'data_dict/member eligibility data dictitonary.xlsx'
+            sql_chunks = generate_sql_scripts(
+                source_table=source_table,
+                mappings_path=mappings_path,
+                domain_model_path=domain_model_path,
+                data_dict_path=data_dict_path,
+                output_table=output_table
+            )
+            return jsonify({'success': True, 'sql_chunks': sql_chunks})
+        except Exception as e:
+            import traceback
+            return jsonify({'success': False, 'error': str(e), 'trace': traceback.format_exc()})
 # --- Data Dictionary & Domain Model Parsing Utilities ---
 import pandas as pd
 
@@ -77,6 +106,7 @@ DEFAULT_DATA_DICTIONARY = "Source Data Dictionary: ..."
 # ...existing code...
 
 app = Flask(__name__)
+register_sql_scripts_endpoint(app)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
