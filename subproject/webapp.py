@@ -1,8 +1,11 @@
+
 import os
+import sys
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from flask import Flask, request, render_template_string, send_from_directory
 from werkzeug.utils import secure_filename
-from llm_mapper import process_domain_model
-from sql_generator import generate_sql_scripts
+from llm_mapper_full import process_domain_model
+from sql_generator_full import generate_sql_scripts
 
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'uploads')
 SCRIPTS_FOLDER = os.path.join(os.path.dirname(__file__), 'scripts')
