@@ -6,11 +6,26 @@ def build_llm_sql_prompt(source_table: str, mappings: dict, domain_model_path: s
     """
     Build a prompt for the LLM to generate all SQL scripts, using the same parsing logic and files as app.py.
     """
-    # Read the full contents of the files
-    with open(domain_model_path, 'r', encoding='utf-8') as f:
-        domain_model_text = f.read()
-    with open(data_dict_path, 'r', encoding='utf-8') as f:
-        data_dict_text = f.read()
+    # Read the full contents of the files (Excel or text)
+    import os
+    import pandas as pd
+    def file_to_text(path):
+        ext = os.path.splitext(path)[1].lower()
+        if ext in ['.xlsx', '.xls']:
+            try:
+                df = pd.read_excel(path)
+                return df.to_csv(index=False)
+            except Exception as e:
+                return f"[ERROR reading Excel: {e}]"
+        else:
+            try:
+                with open(path, 'r', encoding='utf-8') as f:
+                    return f.read()
+            except Exception as e:
+                return f"[ERROR reading file: {e}]"
+
+    domain_model_text = file_to_text(domain_model_path)
+    data_dict_text = file_to_text(data_dict_path)
     mapping_lines = [f"- {k}: {v}" for k, v in mappings.items()]
     # Try to load a 20-row sample from the source data if available
     source_sample = ''
