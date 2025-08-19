@@ -182,6 +182,13 @@ TRANSFORMATION_RULES = {
 # Global variables to store current session data
 current_source_headers = []
 current_mappings = {}
+# Load mappings from mappings.json if it exists
+if os.path.exists('mappings.json'):
+    try:
+        with open('mappings.json', 'r', encoding='utf-8') as f:
+            current_mappings = json.load(f)
+    except Exception as e:
+        print(f"Warning: Failed to load mappings.json: {e}")
 current_source_data = []
 
 # Databricks API configuration
@@ -280,8 +287,15 @@ def save_mapping():
             return jsonify({'error': f'Invalid Employer Group object: {e}'})
 
     # Validate the mapping expression (basic validation)
+
     if validate_mapping_expression(mapping_expression):
         current_mappings[stage_field] = mapping_expression
+        # Save mappings to JSON file for persistence
+        try:
+            with open('mappings.json', 'w', encoding='utf-8') as f:
+                json.dump(current_mappings, f, indent=2)
+        except Exception as e:
+            return jsonify({'error': f'Failed to save mappings to file: {e}'}), 500
         return jsonify({'success': True, 'message': 'Mapping saved successfully'})
     else:
         return jsonify({'error': 'Invalid mapping expression'}), 400
