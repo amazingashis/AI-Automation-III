@@ -30,40 +30,6 @@ def register_sql_scripts_endpoint(app):
 # --- Data Dictionary & Domain Model Parsing Utilities ---
 import pandas as pd
 
-def parse_data_dict(path):
-    df = pd.read_excel(path)
-    df.columns = [c.strip() for c in df.columns]
-    column_mapping = {
-        'Column Name': 'column_name',
-        'Data Type': 'data_type',
-        'Description': 'description',
-        'Format': 'format',
-        'Required': 'required',
-        'Notes': 'notes'
-    }
-    df = df.rename(columns=column_mapping)
-    if 'column_name' in df.columns:
-        df = df.dropna(subset=['column_name'])
-        instruction_patterns = ['instruction', 'this table', 'all fields', 'for actual', 'note:', 'example']
-        for pattern in instruction_patterns:
-            df = df[~df['column_name'].astype(str).str.contains(pattern, case=False, na=False)]
-    return df
-
-def parse_domain_model(path):
-    df = pd.read_excel(path)
-    df.columns = [c.strip() for c in df.columns]
-    column_mapping = {
-        'Column Name': 'column_name',
-        'Data Type': 'data_type',
-        'Description': 'description',
-        'Allowed Values / Format': 'allowed_values',
-        'Required': 'required',
-        'Notes': 'notes'
-    }
-    df = df.rename(columns=column_mapping)
-    if 'column_name' in df.columns:
-        df = df.dropna(subset=['column_name'])
-    return df
 
 # --- LLM Context Builder ---
 def build_llm_context(data_dict_df, domain_model_df):
@@ -76,6 +42,7 @@ def build_llm_context(data_dict_df, domain_model_df):
         context.append(f"- {row['column_name']} ({row.get('data_type','')}): {row.get('description','')}")
     context.append('\nTASK: Map each source field to the most appropriate stage field.')
     return '\n'.join(context)
+
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 import csv
 import os
@@ -84,6 +51,7 @@ from werkzeug.utils import secure_filename
 import re
 from llm_mapper import generate_mappings as llm_generate_mappings
 from dotenv import load_dotenv
+from utils import parse_domain_model, parse_data_dict
 
 load_dotenv()
 

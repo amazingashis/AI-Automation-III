@@ -1,5 +1,5 @@
 # Use the same parsing utilities as app.py
-from app import parse_domain_model, parse_data_dict
+from utils import parse_domain_model, parse_data_dict
 # --- LLM Prompt Builder for SQL Script Generation ---
 
 def build_llm_sql_prompt(source_table: str, mappings: dict, domain_model_path: str, data_dict_path: str) -> str:
