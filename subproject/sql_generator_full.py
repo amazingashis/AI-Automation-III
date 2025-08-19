@@ -115,10 +115,35 @@ def sql_type_from_domain(domain_type: str) -> str:
 
 def generate_create_table(domain_df: pd.DataFrame, table_name: str) -> str:
     """Generate CREATE TABLE statement from domain model DataFrame."""
+    # Debug: print columns and first few rows
+    print("[DEBUG] domain_df.columns:", domain_df.columns.tolist())
+    print("[DEBUG] domain_df.head():\n", domain_df.head())
+    # Try to find the best column name key
+    possible_keys = ['FieldName', 'field', 'name', 'ColumnName', 'column', 'colname']
+    col_key = None
+    for key in possible_keys:
+        if key in domain_df.columns:
+            col_key = key
+            break
+    if not col_key:
+        col_key = domain_df.columns[0]  # fallback to first column
+    type_keys = ['Type', 'type', 'DataType', 'datatype']
+    type_key = None
+    for key in type_keys:
+        if key in domain_df.columns:
+            type_key = key
+            break
+    if not type_key:
+        type_key = None  # fallback to string
     cols = []
     for _, row in domain_df.iterrows():
-        col_name = row.get('FieldName') or row.get('field') or row.get('name')
-        col_type = sql_type_from_domain(str(row.get('Type') or row.get('type') or 'string'))
+        col_name = row.get(col_key)
+        if pd.isna(col_name):
+            continue
+        if type_key:
+            col_type = sql_type_from_domain(str(row.get(type_key) or 'string'))
+        else:
+            col_type = 'VARCHAR(255)'
         cols.append(f"    {col_name} {col_type}")
     cols_str = ',\n'.join(cols)
     return f"CREATE TABLE {table_name} (\n{cols_str}\n);"
