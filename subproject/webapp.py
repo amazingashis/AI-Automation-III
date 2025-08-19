@@ -4,7 +4,6 @@ import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from flask import Flask, request, render_template_string, send_from_directory
 from werkzeug.utils import secure_filename
-from llm_mapper_full import process_domain_model
 from sql_generator_full import generate_sql_scripts
 
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'uploads')
@@ -50,8 +49,7 @@ def upload_files():
             domain_model_path = os.path.join(UPLOAD_FOLDER, files['domain_model'])
             data_dict_path = os.path.join(UPLOAD_FOLDER, files['data_dict'])
             source_file_path = os.path.join(UPLOAD_FOLDER, files['source_file'])
-            # Process and generate script
-            process_domain_model(domain_model_path, data_dict_path)
+            # Generate SQL script directly
             generate_sql_scripts(domain_model_path, data_dict_path, source_file_path, SCRIPTS_FOLDER)
             # Find the generated script (assume .sql file)
             scripts = [f for f in os.listdir(SCRIPTS_FOLDER) if f.endswith('.sql')]
