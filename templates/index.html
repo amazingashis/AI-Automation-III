@@ -335,7 +335,112 @@
             </div>
 
             <!-- Sidebar with Headers and Rules -->
+            <!-- SQL Script Generation Section -->
+            <div class="col-12 mb-4">
+                <div class="card">
+                    <div class="card-header bg-dark text-white">
+                        <h5 class="mb-0"><i class="fas fa-database"></i> SQL Script Generation</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="sqlGenForm" class="row g-2 align-items-center mb-3">
+                            <div class="col-auto">
+                                <label for="sqlSourceTable" class="form-label mb-0">Source Table Name:</label>
+                            </div>
+                            <div class="col-auto">
+                                <input type="text" class="form-control" id="sqlSourceTable" value="silver.elig" style="min-width:180px;">
+                            </div>
+                            <div class="col-auto">
+                                <label for="sqlOutputTable" class="form-label mb-0">Output Table Name:</label>
+                            </div>
+                            <div class="col-auto">
+                                <input type="text" class="form-control" id="sqlOutputTable" value="output_Table" style="min-width:180px;">
+                            </div>
+                            <div class="col-auto">
+                                <button type="submit" class="btn btn-primary"><i class="fas fa-play"></i> Generate SQL Scripts</button>
+                            </div>
+                            <div class="col-auto">
+                                <button type="button" class="btn btn-success" id="downloadNotebookBtn" disabled><i class="fas fa-download"></i> Download as Notebook (.ipynb)</button>
+                            </div>
+                        </form>
+                        <div id="sqlScriptChunks" style="max-height:350px; overflow-y:auto;"></div>
+                        <div id="sqlGenStatus" class="mt-2"></div>
+                    </div>
+                </div>
+            </div>
+
             <div class="col-lg-4">
+    <script>
+    // SQL Script Generation logic
+    let lastSqlChunks = [];
+    document.getElementById('sqlGenForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const tableName = document.getElementById('sqlSourceTable').value || 'silver.elig';
+        const outputTable = document.getElementById('sqlOutputTable').value || 'output_Table';
+        document.getElementById('sqlGenStatus').innerHTML = 'Generating SQL scripts...';
+        document.getElementById('sqlScriptChunks').innerHTML = '';
+        document.getElementById('downloadNotebookBtn').disabled = true;
+        fetch('/generate_sql_scripts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ source_table: tableName, output_table: outputTable })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                lastSqlChunks = data.sql_chunks || [];
+                let html = '';
+                lastSqlChunks.forEach((chunk, idx) => {
+                    html += `<div class='mb-2'><div class='fw-bold'>Chunk ${idx+1}:</div><div class='d-flex'><pre class='bg-light p-2 rounded flex-grow-1' style='font-size:13px;white-space:pre-wrap;' id='sqlChunk${idx}'>${chunk}</pre><button class='btn btn-outline-secondary btn-sm ms-2' onclick='copySqlChunk(${idx})'><i class='fas fa-copy'></i></button></div></div>`;
+                });
+                document.getElementById('sqlScriptChunks').innerHTML = html;
+                document.getElementById('sqlGenStatus').innerHTML = '<span class="text-success">SQL scripts generated.</span>';
+                document.getElementById('downloadNotebookBtn').disabled = false;
+            } else {
+                document.getElementById('sqlGenStatus').innerHTML = '<span class="text-danger">Error: ' + (data.error || 'Failed to generate SQL scripts') + '</span>';
+            }
+        })
+        .catch(err => {
+            document.getElementById('sqlGenStatus').innerHTML = '<span class="text-danger">Error: ' + err + '</span>';
+        });
+    });
+
+    // Copy SQL chunk to clipboard
+    function copySqlChunk(idx) {
+        const pre = document.getElementById('sqlChunk' + idx);
+        if (!pre) return;
+        const text = pre.textContent;
+        navigator.clipboard.writeText(text).then(() => {
+            pre.classList.add('border-success');
+            setTimeout(() => pre.classList.remove('border-success'), 800);
+        });
+    }
+
+    // Download as Notebook (.ipynb)
+    document.getElementById('downloadNotebookBtn').addEventListener('click', function() {
+        if (!lastSqlChunks.length) return;
+        // Build notebook JSON
+        const nb = {
+            cells: [
+                { cell_type: 'markdown', metadata: { language: 'markdown' }, source: ['# SQL Scripts for Domain Model ETL'] }
+            ].concat(
+                lastSqlChunks.map(chunk => ({
+                    cell_type: 'code',
+                    metadata: { language: 'sql' },
+                    source: [chunk]
+                }))
+            ),
+            metadata: { language_info: { name: 'sql' }, orig_nbformat: 4 },
+            nbformat: 4, nbformat_minor: 5
+        };
+        const blob = new Blob([JSON.stringify(nb, null, 2)], {type: 'application/x-ipynb+json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'domain_model_etl.sql.ipynb';
+        a.click();
+        URL.revokeObjectURL(url);
+    });
+    </script>
                 <!-- Uploaded Source Files List -->
                 <div class="card mb-3">
                     <div class="card-header">
